@@ -5,6 +5,6 @@ import {
 
 const router = express.Router();
 
-router.get("/", login);
+router.post("/", login);
 
 export default router;

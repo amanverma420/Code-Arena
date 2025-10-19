@@ -6,7 +6,7 @@ import {
 
 const router = express.Router();
 
-router.get("/create", lobbyCreate);
-router.get("/join", lobbyJoin);
+router.post("/create", lobbyCreate);
+router.post("/join", lobbyJoin);
 
 export default router;

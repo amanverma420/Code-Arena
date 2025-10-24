@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback} from "react";
 import Editor from "@monaco-editor/react";
 
 export default function CodingBattle() {
@@ -11,6 +11,35 @@ export default function CodingBattle() {
   const [hints, setHints] = useState([]);
   const [showHint, setShowHint] = useState(false);
   const [language, setLanguage] = useState("C");
+  const [isRunning, setIsRunning] = useState(false);
+  const [problem, setProblem] = useState({
+  title: "Two Sum",
+  difficulty: "Medium",
+  description: [
+    "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
+    "You may assume that each input would have exactly one solution, and you may not use the same element twice.",
+    "You can return the answer in any order."
+  ],
+  examples: [
+    { input: "[2,7,11,15], 9", output: "[0,1]", explanation: "Because nums[0] + nums[1] == 9, we return [0, 1]." },
+    { input: "[3,2,4], 6", output: "[1,2]" }
+  ],
+  constraints: [
+    "2 ≤ nums.length ≤ 10⁴",
+    "-10⁹ ≤ nums[i] ≤ 10⁹",
+    "-10⁹ ≤ target ≤ 10⁹",
+    "Only one valid answer exists"
+  ],
+  hints: [
+    { level: 1, text: "Consider using a hash map..." },
+    { level: 2, text: "Check if target - element exists in your map..." },
+    { level: 3, text: "Store both value and index..." }
+  ],
+  testCases: [
+    { id: 1, input: "[2,7,11,15], 9", expected: "[0,1]" },
+    { id: 2, input: "[3,2,4], 6", expected: "[1,2]" }
+  ]
+});
 
   const languageTemplates = {
     JavaScript: `function twoSum(nums, target) {\n  // Write your solution here\n}`,
@@ -34,32 +63,108 @@ export default function CodingBattle() {
       .padStart(2, "0")}`;
   };
 
-  const handleRun = () => {
-    setTestResults([
-      {
-        id: 1,
-        input: "[2,7,11,15], target=9",
-        output: "[0,1]",
-        expected: "[0,1]",
-        passed: true,
-      },
-      {
-        id: 2,
-        input: "[3,2,4], target=6",
-        output: "[1,2]",
-        expected: "[1,2]",
-        passed: true,
-      },
-      {
-        id: 3,
-        input: "[3,3], target=6",
-        output: "[0,1]",
-        expected: "[0,1]",
-        passed: false,
-      },
-    ]);
-    setActiveTab("output");
+const handleRun = useCallback(async () => {
+  if (isRunning) return; // prevent double trigger
+  setIsRunning(true);
+
+  setActiveTab("output");
+  setTestResults([
+    { id: 0, input: "", output: "Running...", expected: "", passed: false },
+  ]);
+
+  const languageIds = {
+    C: 50,
+    JavaScript: 63,
+    Python: 71,
+    Java: 62,
   };
+
+  //Collect all valid API keys
+  const apiKeys = [
+    import.meta.env.VITE_RAPIDAPI_KEY1,
+    import.meta.env.VITE_RAPIDAPI_KEY2,
+    import.meta.env.VITE_RAPIDAPI_KEY3,
+    import.meta.env.VITE_RAPIDAPI_KEY4,
+  ].filter(Boolean);
+
+  const apiHost = import.meta.env.VITE_RAPIDAPI_HOST;
+
+  if (apiKeys.length === 0) {
+    setTestResults([
+      { id: 0, input: "", output: "❌ Missing API keys", expected: "", passed: false },
+    ]);
+    setIsRunning(false);
+    return;
+  }
+
+  const payload = {
+    source_code: code,
+    language_id: languageIds[language],
+    stdin: "",
+  };
+
+  let result = null;
+  let error = null;
+
+  for (const key of apiKeys) {
+    try {
+      const createRes = await fetch(
+        "https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-RapidAPI-Key": key,
+            "X-RapidAPI-Host": apiHost,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      // If rate-limited or forbidden, try next key
+      if (createRes.status === 429 || createRes.status === 403) {
+        console.warn(`⚠️ API key failed with ${createRes.status}, trying next key...`);
+        continue;
+      }
+
+      if (!createRes.ok) {
+        const errText = await createRes.text();
+        throw new Error(`Bad Request: ${errText}`);
+      }
+
+      result = await createRes.json();
+      break;
+    } catch (err) {
+      console.error(`❌ Error with key ${key}:`, err);
+      error = err;
+      continue;
+    }
+  }
+
+  if (!result) {
+    setTestResults([
+      { id: 0, input: "", output: `❌ All API keys failed: ${error?.message || "Unknown error"}`, expected: "", passed: false },
+    ]);
+    setIsRunning(false);
+    return;
+  }
+
+  // Process result
+  const output =
+    result.stdout || result.stderr || result.compile_output || "No output";
+
+  setTestResults([
+    {
+      id: 1,
+      input: "N/A",
+      output,
+      expected: "N/A",
+      passed: result.status?.description === "Accepted",
+    },
+  ]);
+
+  setIsRunning(false);
+}, [code, language, isRunning]);
 
 
   const handleGetHint = () => {
@@ -86,7 +191,7 @@ export default function CodingBattle() {
   ].sort((a, b) => b.score - a.score);
 
   return (
-    <div className="battle-container">
+      <div className="battle-root">
       <style>
         {`
           * {
@@ -352,13 +457,14 @@ export default function CodingBattle() {
           }
 
           .output-section {
-            height: 200px;
+            flex: 1;               /* take remaining space */
+            overflow-y: auto;      /* scroll if content exceeds height */
+            padding: 12px 16px;
             background: #1a202c;
             border-top: 2px solid #4a5568;
-            padding: 16px;
-            overflow-y: auto;
-            flex-shrink: 0;
+            border-radius: 0 0 8px 8px;
           }
+
 
           .output-title {
             font-size: 14px;
@@ -670,9 +776,45 @@ export default function CodingBattle() {
               background: #2d3748;
               color: #e2e8f0;
             }
+            .editor-output-container {
+              flex: 1;
+              display: flex;
+              flex-direction: column;
+              min-height: 0; /* important for flex children */
+              overflow: auto; /* scroll when needed */
+            }
+
+            .output-section {
+              flex: 0 0 auto;        /* do not expand, just take content height */
+              max-height: 200px;     /* limit height */
+              overflow-y: auto;      /* scroll if content exceeds height */
+              padding: 12px 16px;
+              background: #1a202c;
+              border-top: 2px solid #4a5568;
+              border-radius: 0 0 8px 8px;
+            }
+
+            .test-case {
+              margin-bottom: 8px;
+              padding: 10px;
+              background: #2d3748;
+              border-radius: 8px;
+              border-left: 4px solid transparent;
+            }
+
+            .test-case.passed {
+              border-left-color: #48bb78;
+            }
+
+            .test-case.failed {
+              border-left-color: #f56565;
+            }
+
         `}
       </style>
 
+        <div className="coding-battle-container">
+      {/* HEADER */}
       <div className="battle-header">
         <div className="header-left">
           <div className="battle-logo">{"</>"} CodeArena</div>
@@ -680,7 +822,7 @@ export default function CodingBattle() {
         </div>
         <div className="header-right">
           <button className="btn btn-hint" onClick={handleGetHint}>
-            💡 Hint ({hints.length}/3)
+            💡 Hint ({problem.hints.length}/3)
           </button>
           <button className="btn btn-run" onClick={handleRun}>
             ▶ Run
@@ -688,19 +830,15 @@ export default function CodingBattle() {
         </div>
       </div>
 
+      {/* MAIN LAYOUT */}
       <div className="main-layout">
+        {/* LEFT PANE */}
         <div className="left-pane">
           <div className="tab-bar">
-            <div
-              className={`tab ${activeTab === "problem" ? "active" : ""}`}
-              onClick={() => setActiveTab("problem")}
-            >
+            <div className={`tab ${activeTab === "problem" ? "active" : ""}`} onClick={() => setActiveTab("problem")}>
               Problem
             </div>
-            <div
-              className={`tab ${activeTab === "leaderboard" ? "active" : ""}`}
-              onClick={() => setActiveTab("leaderboard")}
-            >
+            <div className={`tab ${activeTab === "leaderboard" ? "active" : ""}`} onClick={() => setActiveTab("leaderboard")}>
               Live Scores
             </div>
           </div>
@@ -708,157 +846,85 @@ export default function CodingBattle() {
           {activeTab === "problem" ? (
             <div className="problem-section">
               <h1 className="problem-title">
-                Two Sum
-                <span className="difficulty-badge">Medium</span>
+                {problem.title}
+                <span className="difficulty-badge">{problem.difficulty}</span>
               </h1>
 
               <div className="problem-content">
-                <p>
-                  Given an array of integers <code>nums</code> and an integer{" "}
-                  <code>target</code>, return indices of the two numbers such
-                  that they add up to <code>target</code>.
-                </p>
+                {problem.description.map((line, idx) => <p key={idx}>{line}</p>)}
 
-                <p>
-                  You may assume that each input would have exactly one
-                  solution, and you may not use the same element twice.
-                </p>
-
-                <p>You can return the answer in any order.</p>
-
-                <div className="example-box">
-                  <strong>Example 1:</strong>
-                  <pre>
-                    Input: nums = [2,7,11,15], target = 9{"\n"}Output: [0,1]
-                    {"\n"}Explanation: Because nums[0] + nums[1] == 9, we return
-                    [0, 1].
-                  </pre>
-                </div>
-
-                <div className="example-box">
-                  <strong>Example 2:</strong>
-                  <pre>
-                    Input: nums = [3,2,4], target = 6{"\n"}Output: [1,2]
-                  </pre>
-                </div>
+                {problem.examples.map((ex, idx) => (
+                  <div key={idx} className="example-box">
+                    <strong>Example {idx + 1}:</strong>
+                    <pre>
+                      Input: {ex.input}{"\n"}Output: {ex.output}
+                      {ex.explanation ? `\nExplanation: ${ex.explanation}` : ""}
+                    </pre>
+                  </div>
+                ))}
 
                 <div style={{ marginTop: "24px" }}>
                   <strong>Constraints:</strong>
                   <ul>
-                    <li>2 ≤ nums.length ≤ 10⁴</li>
-                    <li>-10⁹ ≤ nums[i] ≤ 10⁹</li>
-                    <li>-10⁹ ≤ target ≤ 10⁹</li>
-                    <li>Only one valid answer exists</li>
+                    {problem.constraints.map((c, idx) => <li key={idx}>{c}</li>)}
                   </ul>
                 </div>
 
-                {showHint &&
-                  hints.map((hint, idx) => (
-                    <div key={idx} className="hint-panel">
-                      <div className="hint-title">💡 Hint {hint.level}</div>
-                      <div className="hint-text">{hint.text}</div>
-                    </div>
-                  ))}
+                {showHint && problem.hints.map((hint) => (
+                  <div key={hint.level} className="hint-panel">
+                    <div className="hint-title">💡 Hint {hint.level}</div>
+                    <div className="hint-text">{hint.text}</div>
+                  </div>
+                ))}
               </div>
             </div>
           ) : (
             <div className="leaderboard-section">
               <h2 className="leaderboard-title">🏆 Live Leaderboard</h2>
-              {leaderboard.map((player, idx) => (
-                <div
-                  key={idx}
-                  className={`player-score ${
-                    player.name === "You" ? "current" : ""
-                  }`}
-                >
+              {leaderboard.sort((a,b) => b.score - a.score).map((player, idx) => (
+                <div key={idx} className={`player-score ${player.name === "You" ? "current" : ""}`}>
                   <div className="player-left">
                     <div className={`team-indicator ${player.team}`}></div>
                     <div>
-                      <div className="player-name">
-                        #{idx + 1} {player.name}
-                      </div>
-                      <div className="player-tests">
-                        {player.testsPassed}/10 tests passed
-                      </div>
+                      <div className="player-name">#{idx + 1} {player.name}</div>
+                      <div className="player-tests">{player.testsPassed}/{problem.testCases.length} tests passed</div>
                     </div>
                   </div>
                   <div className="player-points">{player.score}</div>
                 </div>
               ))}
-
-              <div className="team-scores">
-                <h3 className="team-scores-title">Team Scores</h3>
-                <div className="team-score-row">
-                  <div>
-                    <span className="team-dot alpha">●</span>
-                    Team Alpha
-                  </div>
-                  <div style={{ fontWeight: "bold" }}>220</div>
-                </div>
-                <div className="team-score-row">
-                  <div>
-                    <span className="team-dot beta">●</span>
-                    Team Beta
-                  </div>
-                  <div style={{ fontWeight: "bold" }}>160</div>
-                </div>
-              </div>
             </div>
           )}
         </div>
 
+        {/* RIGHT PANE */}
         <div className="right-pane">
-          <div
-            className="tab-bar"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
+          <div className="tab-bar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div className="tab active">Code Editor</div>
             <select
               value={language}
-              onChange={(e) => {
-                setLanguage(e.target.value);
-                setCode(languageTemplates[e.target.value]);
-              }}
+              onChange={(e) => { setLanguage(e.target.value); setCode(languageTemplates[e.target.value]); }}
               className="language-select"
-              style={{ width: "150px", marginLeft: "10px" }}
             >
-              {Object.keys(languageTemplates).map((lang) => (
-                <option key={lang} value={lang}>
-                  {lang}
-                </option>
-              ))}
+              {Object.keys(languageTemplates).map((lang) => <option key={lang} value={lang}>{lang}</option>)}
             </select>
           </div>
 
-          {/* Code + Output Container */}
-          <div
-            className="editor-output-container"
-            style={{
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-            }}
-          >
+          <div className="editor-output-container">
             {/* Code Editor */}
-            <div style={{ flex: 1, width: "100%", borderRadius: "8px" }}>
+            <div style={{ flex: 2, minHeight: "200px" }}>
               <Editor
                 height="100%"
                 language={language.toLowerCase()}
                 value={code}
-                onChange={(value) => setCode(value)}
+                onChange={setCode}
                 theme="vs-dark"
                 options={{
                   minimap: { enabled: false },
                   lineNumbers: "on",
-                  wordWrap: "on", // wrap lines to fit the screen
+                  wordWrap: "on",
                   scrollBeyondLastLine: false,
-                  automaticLayout: true,
-                  horizontalScrolling: false,
+                  automaticLayout: true
                 }}
               />
             </div>
@@ -866,11 +932,7 @@ export default function CodingBattle() {
             {/* Resizer */}
             <div
               className="resizer"
-              style={{
-                height: "6px",
-                cursor: "row-resize",
-                background: "#4a5568",
-              }}
+              style={{ height: "6px", cursor: "row-resize", background: "#4a5568" }}
               onMouseDown={(e) => {
                 e.preventDefault();
                 const startY = e.clientY;
@@ -880,11 +942,9 @@ export default function CodingBattle() {
 
                 const onMouseMove = (eMove) => {
                   const newHeight = startHeight + (eMove.clientY - startY);
-                  const containerHeight =
-                    container.getBoundingClientRect().height;
-                  if (newHeight < 100 || newHeight > containerHeight - 100)
-                    return; // min/max height
-                  editor.style.flex = "none"; // fix editor height during drag
+                  const containerHeight = container.getBoundingClientRect().height;
+                  if (newHeight < 100 || newHeight > containerHeight - 100) return;
+                  editor.style.flex = "none";
                   editor.style.height = `${newHeight}px`;
                 };
 
@@ -900,37 +960,18 @@ export default function CodingBattle() {
 
             {/* Test Results / Output */}
             {testResults.length > 0 && (
-              <div
-                className="output-section"
-                style={{
-                  flex: 1,
-                  overflowY: "auto",
-                  borderRadius: "0 0 8px 8px",
-                  borderTop: "2px solid #4a5568",
-                }}
-              >
+              <div className="output-section">
                 <h3 className="output-title">Test Results</h3>
                 {testResults.map((test) => (
-                  <div
-                    key={test.id}
-                    className={`test-case ${test.passed ? "passed" : "failed"}`}
-                  >
+                  <div key={test.id} className={`test-case ${test.passed ? "passed" : "failed"}`}>
                     <div className="test-header">
-                      <span style={{ fontWeight: "bold" }}>
-                        Test Case {test.id}
-                      </span>
-                      <span
-                        className={`test-status ${
-                          test.passed ? "passed" : "failed"
-                        }`}
-                      >
+                      <span style={{ fontWeight: "bold" }}>Test Case {test.id}</span>
+                      <span className={`test-status ${test.passed ? "passed" : "failed"}`}>
                         {test.passed ? "✓ Passed" : "✗ Failed"}
                       </span>
                     </div>
                     <div className="test-details">Input: {test.input}</div>
-                    <div className="test-details">
-                      Output: {test.output} | Expected: {test.expected}
-                    </div>
+                    <div className="test-details">Output: {test.output} | Expected: {test.expected}</div>
                   </div>
                 ))}
               </div>
@@ -939,5 +980,6 @@ export default function CodingBattle() {
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 }

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback} from "react";
 import Editor from "@monaco-editor/react";
+import { useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export default function CodingBattle() {
   const [activeTab, setActiveTab] = useState("problem");

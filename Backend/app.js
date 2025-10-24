@@ -7,6 +7,7 @@ import http from "http";
 
 import loginRoutes from "./routes/loginRoutes.js";
 import lobbyRoutes from "./routes/lobbyRoutes.js";
+import battleRoutes from "./routes/battleRoutes.js";
 import { connectDB } from "./config/db.js";
 
 dotenv.config();
@@ -27,6 +28,7 @@ if (process.env.NODE_ENV !== "production") {
 
 app.use("/api/login", loginRoutes);
 app.use("/api/lobby", lobbyRoutes);
+app.use("/api/battle", battleRoutes)
 
 const server = http.createServer(app);
 const io = new Server(server, {

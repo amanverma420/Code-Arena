@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback} from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Editor from "@monaco-editor/react";
 import { useLocation } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import AIHintSidebar from "./ai_hint_sidebar.jsx"; // <--- Import the new component
 
 export default function CodingBattle() {
   const [activeTab, setActiveTab] = useState("problem");
@@ -14,34 +15,37 @@ export default function CodingBattle() {
   const [showHint, setShowHint] = useState(false);
   const [language, setLanguage] = useState("C");
   const [isRunning, setIsRunning] = useState(false);
+  // New sidebar state
+  const [isAISidebarOpen, setIsAISidebarOpen] = useState(false);
+
   const [problem, setProblem] = useState({
-  title: "Two Sum",
-  difficulty: "Medium",
-  description: [
-    "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
-    "You may assume that each input would have exactly one solution, and you may not use the same element twice.",
-    "You can return the answer in any order."
-  ],
-  examples: [
-    { input: "[2,7,11,15], 9", output: "[0,1]", explanation: "Because nums[0] + nums[1] == 9, we return [0, 1]." },
-    { input: "[3,2,4], 6", output: "[1,2]" }
-  ],
-  constraints: [
-    "2 ≤ nums.length ≤ 10⁴",
-    "-10⁹ ≤ nums[i] ≤ 10⁹",
-    "-10⁹ ≤ target ≤ 10⁹",
-    "Only one valid answer exists"
-  ],
-  hints: [
-    { level: 1, text: "Consider using a hash map..." },
-    { level: 2, text: "Check if target - element exists in your map..." },
-    { level: 3, text: "Store both value and index..." }
-  ],
-  testCases: [
-    { id: 1, input: "[2,7,11,15], 9", expected: "[0,1]" },
-    { id: 2, input: "[3,2,4], 6", expected: "[1,2]" }
-  ]
-});
+    title: "Two Sum",
+    difficulty: "Medium",
+    description: [
+      "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
+      "You may assume that each input would have exactly one solution, and you may not use the same element twice.",
+      "You can return the answer in any order."
+    ],
+    examples: [
+      { input: "[2,7,11,15], 9", output: "[0,1]", explanation: "Because nums[0] + nums[1] == 9, we return [0, 1]." },
+      { input: "[3,2,4], 6", output: "[1,2]" }
+    ],
+    constraints: [
+      "2 ≤ nums.length ≤ 10⁴",
+      "-10⁹ ≤ nums[i] ≤ 10⁹",
+      "-10⁹ ≤ target ≤ 10⁹",
+      "Only one valid answer exists"
+    ],
+    hints: [
+      { level: 1, text: "Consider using a hash map..." },
+      { level: 2, text: "Check if target - element exists in your map..." },
+      { level: 3, text: "Store both value and index..." }
+    ],
+    testCases: [
+      { id: 1, input: "[2,7,11,15], 9", expected: "[0,1]" },
+      { id: 2, input: "[3,2,4], 6", expected: "[1,2]" }
+    ]
+  });
 
   const languageTemplates = {
     JavaScript: `function twoSum(nums, target) {\n  // Write your solution here\n}`,
@@ -65,112 +69,103 @@ export default function CodingBattle() {
       .padStart(2, "0")}`;
   };
 
-const handleRun = useCallback(async () => {
-  if (isRunning) return; // prevent double trigger
-  setIsRunning(true);
+  const handleRun = useCallback(async () => {
+    if (isRunning) return;
+    setIsRunning(true);
 
-  setActiveTab("output");
-  setTestResults([
-    { id: 0, input: "", output: "Running...", expected: "", passed: false },
-  ]);
-
-  const languageIds = {
-    C: 50,
-    JavaScript: 63,
-    Python: 71,
-    Java: 62,
-  };
-
-  //Collect all valid API keys
-  const apiKeys = [
-    import.meta.env.VITE_RAPIDAPI_KEY1,
-    import.meta.env.VITE_RAPIDAPI_KEY2,
-    import.meta.env.VITE_RAPIDAPI_KEY3,
-    import.meta.env.VITE_RAPIDAPI_KEY4,
-  ].filter(Boolean);
-
-  const apiHost = import.meta.env.VITE_RAPIDAPI_HOST;
-
-  if (apiKeys.length === 0) {
+    setActiveTab("output");
     setTestResults([
-      { id: 0, input: "", output: "❌ Missing API keys", expected: "", passed: false },
+      { id: 0, input: "", output: "Running...", expected: "", passed: false },
     ]);
-    setIsRunning(false);
-    return;
-  }
 
-  const payload = {
-    source_code: code,
-    language_id: languageIds[language],
-    stdin: "",
-  };
+    const languageIds = {
+      C: 50,
+      JavaScript: 63,
+      Python: 71,
+      Java: 62,
+    };
 
-  let result = null;
-  let error = null;
+    const apiKeys = [
+      import.meta.env.VITE_RAPIDAPI_KEY1,
+      import.meta.env.VITE_RAPIDAPI_KEY2,
+      import.meta.env.VITE_RAPIDAPI_KEY3,
+      import.meta.env.VITE_RAPIDAPI_KEY4,
+    ].filter(Boolean);
 
-  for (const key of apiKeys) {
-    try {
-      const createRes = await fetch(
-        "https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-RapidAPI-Key": key,
-            "X-RapidAPI-Host": apiHost,
-          },
-          body: JSON.stringify(payload),
+    const apiHost = import.meta.env.VITE_RAPIDAPI_HOST;
+
+    if (apiKeys.length === 0) {
+      setTestResults([
+        { id: 0, input: "", output: "❌ Missing API keys", expected: "", passed: false },
+      ]);
+      setIsRunning(false);
+      return;
+    }
+
+    const payload = {
+      source_code: code,
+      language_id: languageIds[language],
+      stdin: "",
+    };
+
+    let result = null;
+    let error = null;
+
+    for (const key of apiKeys) {
+      try {
+        const createRes = await fetch(
+          "https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-RapidAPI-Key": key,
+              "X-RapidAPI-Host": apiHost,
+            },
+            body: JSON.stringify(payload),
+          }
+        );
+        if (createRes.status === 429 || createRes.status === 403) {
+          console.warn(`⚠️ API key failed with ${createRes.status}, trying next key...`);
+          continue;
         }
-      );
-
-      // If rate-limited or forbidden, try next key
-      if (createRes.status === 429 || createRes.status === 403) {
-        console.warn(`⚠️ API key failed with ${createRes.status}, trying next key...`);
+        if (!createRes.ok) {
+          const errText = await createRes.text();
+          throw new Error(`Bad Request: ${errText}`);
+        }
+        result = await createRes.json();
+        break;
+      } catch (err) {
+        console.error(`❌ Error with key ${key}:`, err);
+        error = err;
         continue;
       }
-
-      if (!createRes.ok) {
-        const errText = await createRes.text();
-        throw new Error(`Bad Request: ${errText}`);
-      }
-
-      result = await createRes.json();
-      break;
-    } catch (err) {
-      console.error(`❌ Error with key ${key}:`, err);
-      error = err;
-      continue;
     }
-  }
+    if (!result) {
+      setTestResults([
+        { id: 0, input: "", output: `❌ All API keys failed: ${error?.message || "Unknown error"}`, expected: "", passed: false },
+      ]);
+      setIsRunning(false);
+      return;
+    }
 
-  if (!result) {
+    const output =
+      result.stdout || result.stderr || result.compile_output || "No output";
+
     setTestResults([
-      { id: 0, input: "", output: `❌ All API keys failed: ${error?.message || "Unknown error"}`, expected: "", passed: false },
+      {
+        id: 1,
+        input: "N/A",
+        output,
+        expected: "N/A",
+        passed: result.status?.description === "Accepted",
+      },
     ]);
     setIsRunning(false);
-    return;
-  }
-
-  // Process result
-  const output =
-    result.stdout || result.stderr || result.compile_output || "No output";
-
-  setTestResults([
-    {
-      id: 1,
-      input: "N/A",
-      output,
-      expected: "N/A",
-      passed: result.status?.description === "Accepted",
-    },
-  ]);
-
-  setIsRunning(false);
-}, [code, language, isRunning]);
-
+  }, [code, language, isRunning]);
 
   const handleGetHint = () => {
-    if (hints.length >= 3) return; // Prevent more than 3 hints
+    if (hints.length >= 3) return;
     const newHint = {
       level: hints.length + 1,
       text:
@@ -193,7 +188,20 @@ const handleRun = useCallback(async () => {
   ].sort((a, b) => b.score - a.score);
 
   return (
-      <div className="battle-root">
+    <div className="battle-root">
+      {/* --- AI Sidebar integration --- */}
+      <AIHintSidebar
+        isOpen={isAISidebarOpen}
+        onClose={() => setIsAISidebarOpen(false)}
+        problemContext={{
+          title: problem.title,
+          description: problem.description,
+          language: language,
+          currentCode: code
+        }}
+      />
+      {/* --- End AI Sidebar integration --- */}
+
       <style>
         {`
           * {
@@ -815,173 +823,170 @@ const handleRun = useCallback(async () => {
         `}
       </style>
 
-        <div className="coding-battle-container">
-      {/* HEADER */}
-      <div className="battle-header">
-        <div className="header-left">
-          <div className="battle-logo">{"</>"} CodeArena</div>
-          <div className="timer">⏱ {formatTime(timeLeft)}</div>
-        </div>
-        <div className="header-right">
-          <button className="btn btn-hint" onClick={handleGetHint}>
-            💡 Hint ({problem.hints.length}/3)
-          </button>
-          <button className="btn btn-run" onClick={handleRun}>
-            ▶ Run
-          </button>
-        </div>
-      </div>
-
-      {/* MAIN LAYOUT */}
-      <div className="main-layout">
-        {/* LEFT PANE */}
-        <div className="left-pane">
-          <div className="tab-bar">
-            <div className={`tab ${activeTab === "problem" ? "active" : ""}`} onClick={() => setActiveTab("problem")}>
-              Problem
-            </div>
-            <div className={`tab ${activeTab === "leaderboard" ? "active" : ""}`} onClick={() => setActiveTab("leaderboard")}>
-              Live Scores
-            </div>
+      <div className="coding-battle-container">
+        {/* HEADER */}
+        <div className="battle-header">
+          <div className="header-left">
+            <div className="battle-logo">{"</>"} CodeArena</div>
+            <div className="timer">⏱ {formatTime(timeLeft)}</div>
           </div>
+          <div className="header-right">
+            {/* <--- Add this button for sidebar --- */}
+            <button
+              className="btn"
+              style={{ background: "#3b82f6", color: "#fff" }}
+              onClick={() => setIsAISidebarOpen(true)}
+            >
+              🤖 AI Assistant
+            </button>
+            {/* <--- End sidebar button --- */}
+            <button className="btn btn-hint" onClick={handleGetHint}>
+              💡 Hint ({problem.hints.length}/3)
+            </button>
+            <button className="btn btn-run" onClick={handleRun}>
+              ▶ Run
+            </button>
+          </div>
+        </div>
 
-          {activeTab === "problem" ? (
-            <div className="problem-section">
-              <h1 className="problem-title">
-                {problem.title}
-                <span className="difficulty-badge">{problem.difficulty}</span>
-              </h1>
-
-              <div className="problem-content">
-                {problem.description.map((line, idx) => <p key={idx}>{line}</p>)}
-
-                {problem.examples.map((ex, idx) => (
-                  <div key={idx} className="example-box">
-                    <strong>Example {idx + 1}:</strong>
-                    <pre>
-                      Input: {ex.input}{"\n"}Output: {ex.output}
-                      {ex.explanation ? `\nExplanation: ${ex.explanation}` : ""}
-                    </pre>
-                  </div>
-                ))}
-
-                <div style={{ marginTop: "24px" }}>
-                  <strong>Constraints:</strong>
-                  <ul>
-                    {problem.constraints.map((c, idx) => <li key={idx}>{c}</li>)}
-                  </ul>
-                </div>
-
-                {showHint && problem.hints.map((hint) => (
-                  <div key={hint.level} className="hint-panel">
-                    <div className="hint-title">💡 Hint {hint.level}</div>
-                    <div className="hint-text">{hint.text}</div>
-                  </div>
-                ))}
+        {/* MAIN LAYOUT */}
+        <div className="main-layout">
+          {/* LEFT PANE */}
+          <div className="left-pane">
+            <div className="tab-bar">
+              <div className={`tab ${activeTab === "problem" ? "active" : ""}`} onClick={() => setActiveTab("problem")}>
+                Problem
+              </div>
+              <div className={`tab ${activeTab === "leaderboard" ? "active" : ""}`} onClick={() => setActiveTab("leaderboard")}>
+                Live Scores
               </div>
             </div>
-          ) : (
-            <div className="leaderboard-section">
-              <h2 className="leaderboard-title">🏆 Live Leaderboard</h2>
-              {leaderboard.sort((a,b) => b.score - a.score).map((player, idx) => (
-                <div key={idx} className={`player-score ${player.name === "You" ? "current" : ""}`}>
-                  <div className="player-left">
-                    <div className={`team-indicator ${player.team}`}></div>
-                    <div>
-                      <div className="player-name">#{idx + 1} {player.name}</div>
-                      <div className="player-tests">{player.testsPassed}/{problem.testCases.length} tests passed</div>
+            {activeTab === "problem" ? (
+              <div className="problem-section">
+                <h1 className="problem-title">
+                  {problem.title}
+                  <span className="difficulty-badge">{problem.difficulty}</span>
+                </h1>
+                <div className="problem-content">
+                  {problem.description.map((line, idx) => <p key={idx}>{line}</p>)}
+                  {problem.examples.map((ex, idx) => (
+                    <div key={idx} className="example-box">
+                      <strong>Example {idx + 1}:</strong>
+                      <pre>
+                        Input: {ex.input}{"\n"}Output: {ex.output}
+                        {ex.explanation ? `\nExplanation: ${ex.explanation}` : ""}
+                      </pre>
                     </div>
+                  ))}
+                  <div style={{ marginTop: "24px" }}>
+                    <strong>Constraints:</strong>
+                    <ul>
+                      {problem.constraints.map((c, idx) => <li key={idx}>{c}</li>)}
+                    </ul>
                   </div>
-                  <div className="player-points">{player.score}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* RIGHT PANE */}
-        <div className="right-pane">
-          <div className="tab-bar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div className="tab active">Code Editor</div>
-            <select
-              value={language}
-              onChange={(e) => { setLanguage(e.target.value); setCode(languageTemplates[e.target.value]); }}
-              className="language-select"
-            >
-              {Object.keys(languageTemplates).map((lang) => <option key={lang} value={lang}>{lang}</option>)}
-            </select>
-          </div>
-
-          <div className="editor-output-container">
-            {/* Code Editor */}
-            <div style={{ flex: 2, minHeight: "200px" }}>
-              <Editor
-                height="100%"
-                language={language.toLowerCase()}
-                value={code}
-                onChange={setCode}
-                theme="vs-dark"
-                options={{
-                  minimap: { enabled: false },
-                  lineNumbers: "on",
-                  wordWrap: "on",
-                  scrollBeyondLastLine: false,
-                  automaticLayout: true
-                }}
-              />
-            </div>
-
-            {/* Resizer */}
-            <div
-              className="resizer"
-              style={{ height: "6px", cursor: "row-resize", background: "#4a5568" }}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                const startY = e.clientY;
-                const editor = e.target.previousElementSibling;
-                const container = e.target.parentElement;
-                const startHeight = editor.getBoundingClientRect().height;
-
-                const onMouseMove = (eMove) => {
-                  const newHeight = startHeight + (eMove.clientY - startY);
-                  const containerHeight = container.getBoundingClientRect().height;
-                  if (newHeight < 100 || newHeight > containerHeight - 100) return;
-                  editor.style.flex = "none";
-                  editor.style.height = `${newHeight}px`;
-                };
-
-                const onMouseUp = () => {
-                  document.removeEventListener("mousemove", onMouseMove);
-                  document.removeEventListener("mouseup", onMouseUp);
-                };
-
-                document.addEventListener("mousemove", onMouseMove);
-                document.addEventListener("mouseup", onMouseUp);
-              }}
-            ></div>
-
-            {/* Test Results / Output */}
-            {testResults.length > 0 && (
-              <div className="output-section">
-                <h3 className="output-title">Test Results</h3>
-                {testResults.map((test) => (
-                  <div key={test.id} className={`test-case ${test.passed ? "passed" : "failed"}`}>
-                    <div className="test-header">
-                      <span style={{ fontWeight: "bold" }}>Test Case {test.id}</span>
-                      <span className={`test-status ${test.passed ? "passed" : "failed"}`}>
-                        {test.passed ? "✓ Passed" : "✗ Failed"}
-                      </span>
+                  {showHint && problem.hints.map((hint) => (
+                    <div key={hint.level} className="hint-panel">
+                      <div className="hint-title">💡 Hint {hint.level}</div>
+                      <div className="hint-text">{hint.text}</div>
                     </div>
-                    <div className="test-details">Input: {test.input}</div>
-                    <div className="test-details">Output: {test.output} | Expected: {test.expected}</div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="leaderboard-section">
+                <h2 className="leaderboard-title">🏆 Live Leaderboard</h2>
+                {leaderboard.sort((a, b) => b.score - a.score).map((player, idx) => (
+                  <div key={idx} className={`player-score ${player.name === "You" ? "current" : ""}`}>
+                    <div className="player-left">
+                      <div className={`team-indicator ${player.team}`}></div>
+                      <div>
+                        <div className="player-name">#{idx + 1} {player.name}</div>
+                        <div className="player-tests">{player.testsPassed}/{problem.testCases.length} tests passed</div>
+                      </div>
+                    </div>
+                    <div className="player-points">{player.score}</div>
                   </div>
                 ))}
               </div>
             )}
           </div>
+          {/* RIGHT PANE */}
+          <div className="right-pane">
+            <div className="tab-bar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div className="tab active">Code Editor</div>
+              <select
+                value={language}
+                onChange={(e) => { setLanguage(e.target.value); setCode(languageTemplates[e.target.value]); }}
+                className="language-select"
+              >
+                {Object.keys(languageTemplates).map((lang) => <option key={lang} value={lang}>{lang}</option>)}
+              </select>
+            </div>
+            <div className="editor-output-container">
+              {/* Code Editor */}
+              <div style={{ flex: 2, minHeight: "200px" }}>
+                <Editor
+                  height="100%"
+                  language={language.toLowerCase()}
+                  value={code}
+                  onChange={setCode}
+                  theme="vs-dark"
+                  options={{
+                    minimap: { enabled: false },
+                    lineNumbers: "on",
+                    wordWrap: "on",
+                    scrollBeyondLastLine: false,
+                    automaticLayout: true
+                  }}
+                />
+              </div>
+              {/* Resizer */}
+              <div
+                className="resizer"
+                style={{ height: "6px", cursor: "row-resize", background: "#4a5568" }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  const startY = e.clientY;
+                  const editor = e.target.previousElementSibling;
+                  const container = e.target.parentElement;
+                  const startHeight = editor.getBoundingClientRect().height;
+                  const onMouseMove = (eMove) => {
+                    const newHeight = startHeight + (eMove.clientY - startY);
+                    const containerHeight = container.getBoundingClientRect().height;
+                    if (newHeight < 100 || newHeight > containerHeight - 100) return;
+                    editor.style.flex = "none";
+                    editor.style.height = `${newHeight}px`;
+                  };
+                  const onMouseUp = () => {
+                    document.removeEventListener("mousemove", onMouseMove);
+                    document.removeEventListener("mouseup", onMouseUp);
+                  };
+                  document.addEventListener("mousemove", onMouseMove);
+                  document.addEventListener("mouseup", onMouseUp);
+                }}
+              ></div>
+              {/* Test Results / Output */}
+              {testResults.length > 0 && (
+                <div className="output-section">
+                  <h3 className="output-title">Test Results</h3>
+                  {testResults.map((test) => (
+                    <div key={test.id} className={`test-case ${test.passed ? "passed" : "failed"}`}>
+                      <div className="test-header">
+                        <span style={{ fontWeight: "bold" }}>Test Case {test.id}</span>
+                        <span className={`test-status ${test.passed ? "passed" : "failed"}`}>
+                          {test.passed ? "✓ Passed" : "✗ Failed"}
+                        </span>
+                      </div>
+                      <div className="test-details">Input: {test.input}</div>
+                      <div className="test-details">Output: {test.output} | Expected: {test.expected}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
 }

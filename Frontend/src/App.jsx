@@ -7,7 +7,7 @@ import WaitingRoom from './component/waiting_room.jsx'
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import io from "socket.io-client";
 
-const socket = io.connect("http://localhost:3000");
+const socket = io.connect("http://10.1.231.115:3000");
 
 function App() {
   return (

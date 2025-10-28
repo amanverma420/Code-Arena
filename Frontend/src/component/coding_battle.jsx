@@ -4,6 +4,8 @@ import { useLocation } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 
 export default function CodingBattle() {
+  const location = useLocation();
+  const lobbyDetails = location.state?.lobby || {};
   const [activeTab, setActiveTab] = useState("problem");
   const [code, setCode] = useState(
     `function twoSum(nums, target) {\n  // Write your solution here\n  \n}`
@@ -14,7 +16,8 @@ export default function CodingBattle() {
   const [showHint, setShowHint] = useState(false);
   const [language, setLanguage] = useState("C");
   const [isRunning, setIsRunning] = useState(false);
-  const [problem, setProblem] = useState({
+  const Navigate = useNavigate();
+  const [problem, setProblem] = useState(/*{
   title: "Two Sum",
   difficulty: "Medium",
   description: [
@@ -41,7 +44,7 @@ export default function CodingBattle() {
     { id: 1, input: "[2,7,11,15], 9", expected: "[0,1]" },
     { id: 2, input: "[3,2,4], 6", expected: "[1,2]" }
   ]
-});
+}*/{});
 
   const languageTemplates = {
     JavaScript: `function twoSum(nums, target) {\n  // Write your solution here\n}`,
@@ -55,6 +58,26 @@ export default function CodingBattle() {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+  function capitalize(str) {
+    if (!str) return ''; // handle empty strings
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  }
+
+    const fetchProblem = async () => {
+      const res = await fetch("/api/battle/allocate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ difficulty: capitalize(lobbyDetails.difficulty) }),
+      });
+      const data = await res.json();
+      setProblem(data.problem[0]);
+      //console.log("Allocated Problem:", problem);
+      //console.log(data.problem[0].companies)
+    };
+    fetchProblem();
   }, []);
 
   const formatTime = (seconds) => {
@@ -201,7 +224,15 @@ const handleRun = useCallback(async () => {
             padding: 0;
             box-sizing: border-box;
             width : 100%
+            height : 100%
           }
+
+          html, body, #root {
+            height: 100%;
+            margin: 0;
+          }
+
+          *{ box-sizing: border-box; }
 
           .battle-container {
             height: 100vh;
@@ -823,9 +854,9 @@ const handleRun = useCallback(async () => {
           <div className="timer">⏱ {formatTime(timeLeft)}</div>
         </div>
         <div className="header-right">
-          <button className="btn btn-hint" onClick={handleGetHint}>
+          {/* <button className="btn btn-hint" onClick={handleGetHint}>
             💡 Hint ({problem.hints.length}/3)
-          </button>
+          </button> */}
           <button className="btn btn-run" onClick={handleRun}>
             ▶ Run
           </button>
@@ -853,9 +884,9 @@ const handleRun = useCallback(async () => {
               </h1>
 
               <div className="problem-content">
-                {problem.description.map((line, idx) => <p key={idx}>{line}</p>)}
+                {problem.description}
 
-                {problem.examples.map((ex, idx) => (
+                {/*problem.examples.map((ex, idx) => (
                   <div key={idx} className="example-box">
                     <strong>Example {idx + 1}:</strong>
                     <pre>
@@ -863,21 +894,32 @@ const handleRun = useCallback(async () => {
                       {ex.explanation ? `\nExplanation: ${ex.explanation}` : ""}
                     </pre>
                   </div>
-                ))}
+                ))*/}
 
-                <div style={{ marginTop: "24px" }}>
-                  <strong>Constraints:</strong>
+                { <div style={{ marginTop: "24px" }}>
+                  <strong>Companies:</strong>
                   <ul>
-                    {problem.constraints.map((c, idx) => <li key={idx}>{c}</li>)}
+                    {(Array.isArray(problem.companies) ? problem.companies : [problem.companies || ""]).map((line, i) => (
+                      <li key={i} style={{ marginBottom: 8, color: "#cbd5e0" }}>{line}</li>
+                      ))}
                   </ul>
-                </div>
+                </div> }
 
-                {showHint && problem.hints.map((hint) => (
+                {/* { <div style={{ marginTop: "24px" }}>
+                  <strong>Testcases:</strong>
+                  <ul>
+                    {(Array.isArray(problem.testcases) ? problem.testcases : [problem.testcases || ""]).map((line, i) => (
+                      <li key={i} style={{ marginBottom: 8, color: "#cbd5e0" }}>{line}</li>
+                      ))}
+                  </ul>
+                </div> } */}
+
+                {/*showHint && problem.hints.map((hint) => (
                   <div key={hint.level} className="hint-panel">
                     <div className="hint-title">💡 Hint {hint.level}</div>
                     <div className="hint-text">{hint.text}</div>
                   </div>
-                ))}
+                ))*/}
               </div>
             </div>
           ) : (
@@ -889,7 +931,7 @@ const handleRun = useCallback(async () => {
                     <div className={`team-indicator ${player.team}`}></div>
                     <div>
                       <div className="player-name">#{idx + 1} {player.name}</div>
-                      <div className="player-tests">{player.testsPassed}/{problem.testCases.length} tests passed</div>
+                      <div className="player-tests">{/*player.testsPassed}/{problem.testCases.length*/} tests passed</div>
                     </div>
                   </div>
                   <div className="player-points">{player.score}</div>

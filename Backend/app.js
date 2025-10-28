@@ -21,7 +21,7 @@ app.use(cors());
 if (process.env.NODE_ENV !== "production") {
   app.use(
     cors({
-      origin: "http://localhost:5173",
+      origin: "*",
     })
   );
 }
@@ -113,7 +113,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 connectDB().then(() => {
-  server.listen(PORT, () => {
+  server.listen(PORT, "0.0.0.0", () => {
     console.log("Server started on PORT:", PORT);
   });
 });

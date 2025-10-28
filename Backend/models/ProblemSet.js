@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const problemSchema = new mongoose.Schema(
   {
+    id: {
+      type: Number,
+      required: true,
+      unique: true,
+    },
     title: {
       type: String,
       required: true,
@@ -13,6 +18,10 @@ const problemSchema = new mongoose.Schema(
     acceptance_rate: {
       type: Number,
       required: true,
+    },
+    description: {
+      type: String,
+      required: true, 
     },
     companies: {
       type: [String],
@@ -29,6 +38,7 @@ const problemSchema = new mongoose.Schema(
           output: { type: String, required: true },
         },
       ],
+      //type: [String],
       required: true,
     },
   }

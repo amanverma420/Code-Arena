@@ -7,7 +7,6 @@ export default function AIHintSidebar({ isOpen, onClose, problemContext }) {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -16,13 +15,12 @@ export default function AIHintSidebar({ isOpen, onClose, problemContext }) {
     scrollToBottom();
   }, [messages]);
 
-  // Initialize chat with system message
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       setMessages([
         {
           role: 'assistant',
-          content: '👋 Hi! I\'m your coding assistant. Ask me for hints about the current problem, but remember - I won\'t give you the full solution!',
+          content: '👋 Hi! I\'m your AI coding assistant. Ask me for hints about the current problem!',
           timestamp: new Date().toISOString()
         }
       ]);
@@ -43,7 +41,6 @@ export default function AIHintSidebar({ isOpen, onClose, problemContext }) {
     setIsLoading(true);
 
     try {
-      // Send request to Flask backend
       const response = await fetch('http://localhost:5000/api/ai-hint', {
         method: 'POST',
         headers: {
@@ -74,7 +71,7 @@ export default function AIHintSidebar({ isOpen, onClose, problemContext }) {
       console.error('Error:', error);
       const errorMessage = {
         role: 'assistant',
-        content: '❌ Sorry, I encountered an error. Please make sure the backend server is running.',
+        content: '❌ Connection error. Please ensure the backend server is running.',
         timestamp: new Date().toISOString()
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -93,7 +90,7 @@ export default function AIHintSidebar({ isOpen, onClose, problemContext }) {
   const clearChat = () => {
     setMessages([{
       role: 'assistant',
-      content: '👋 Chat cleared! How can I help you with this problem?',
+      content: '✨ Chat cleared! Ready to help you solve this problem.',
       timestamp: new Date().toISOString()
     }]);
   };
@@ -103,48 +100,41 @@ export default function AIHintSidebar({ isOpen, onClose, problemContext }) {
   return (
     <div className="ai-sidebar-overlay">
       <div className="ai-sidebar-container">
-        {/* Header */}
         <div className="ai-sidebar-header">
           <div className="ai-header-title">
-            <span className="ai-icon">🤖</span>
-            <h3>AI Coding Assistant</h3>
+            <span className="ai-icon">✨</span>
+            <h3>AI Assistant</h3>
           </div>
-          <div className="ai-header-actions">
-            <button 
-              className="clear-btn" 
-              onClick={clearChat}
-              title="Clear chat"
-            >
-              🗑️
+          <div className="header-actions">
+            <button className="clear-btn" onClick={clearChat}>
+              Clear
             </button>
-            <button 
-              className="close-btn" 
-              onClick={onClose}
-              title="Close sidebar"
-            >
+            <button className="close-btn" onClick={onClose}>
               ✕
             </button>
           </div>
         </div>
 
-        {/* Messages Container */}
         <div className="ai-messages-container">
-          {messages.map((msg, index) => (
-            <div 
-              key={index} 
-              className={`ai-message ${msg.role === 'user' ? 'user-message' : 'assistant-message'}`}
-            >
+          {messages.map((msg, idx) => (
+            <div key={idx} className={`ai-message ${msg.role}-message`}>
               <div className="message-avatar">
                 {msg.role === 'user' ? '👤' : '🤖'}
               </div>
               <div className="message-content">
-                <div className="message-text">{msg.content}</div>
+                <div className="message-text">
+                  {typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content)}
+                </div>
                 <div className="message-timestamp">
-                  {new Date(msg.timestamp).toLocaleTimeString()}
+                  {new Date(msg.timestamp).toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  })}
                 </div>
               </div>
             </div>
           ))}
+
           {isLoading && (
             <div className="ai-message assistant-message">
               <div className="message-avatar">🤖</div>
@@ -157,32 +147,30 @@ export default function AIHintSidebar({ isOpen, onClose, problemContext }) {
               </div>
             </div>
           )}
+
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Container */}
         <div className="ai-input-container">
           <textarea
             className="ai-input"
-            placeholder="Ask for a hint... (Press Enter to send)"
+            placeholder="Ask for a hint..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
-            rows="2"
             disabled={isLoading}
           />
-          <button 
-            className="send-btn" 
+          <button
+            className="send-btn"
             onClick={handleSendMessage}
-            disabled={isLoading || !inputValue.trim()}
+            disabled={!inputValue.trim() || isLoading}
           >
-            {isLoading ? '⏳' : '📤'}
+            ➤
           </button>
         </div>
 
-        {/* Info Footer */}
         <div className="ai-sidebar-footer">
-          <small>💡 I provide hints only - no complete solutions!</small>
+          <small>AI responses are hints only • Press Enter to send</small>
         </div>
       </div>
     </div>

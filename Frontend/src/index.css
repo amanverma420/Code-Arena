@@ -802,6 +802,69 @@ body {
   word-break: break-all;
 }
 
+/* ========== EDITOR RESIZER ========== */
+.editor-resizer {
+  height: 4px;
+  background: var(--border-subtle);
+  cursor: ns-resize;
+  transition: background var(--transition-fast);
+  position: relative;
+}
+
+.editor-resizer:hover {
+  background: var(--accent-primary);
+}
+
+.editor-resizer::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 4px;
+  background: var(--border-strong);
+  border-radius: 2px;
+  transition: all var(--transition-fast);
+}
+
+.editor-resizer:hover::before {
+  background: var(--accent-primary);
+  width: 60px;
+}
+
+/* ========== COMPANIES TAGS ========== */
+.companies-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.company-tag {
+  padding: var(--space-1) var(--space-3);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all var(--transition-base);
+}
+
+.company-tag:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  transform: translateY(-1px);
+}
+
+/* ========== OUTPUT SECTION ADJUSTMENTS ========== */
+.output-section {
+  flex: 1;
+  min-height: 120px;
+  max-height: none;
+}
+
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .battle-content {

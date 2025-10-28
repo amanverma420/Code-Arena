@@ -5,6 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import AIHintSidebar from "./ai_hint_sidebar.jsx";
 
 export default function CodingBattle() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const lobbyDetails = location.state?.lobby || {};
+  
   const [activeTab, setActiveTab] = useState("problem");
   const [code, setCode] = useState(
     `function twoSum(nums, target) {\n  // Write your solution here\n  \n}`
@@ -16,35 +20,7 @@ export default function CodingBattle() {
   const [language, setLanguage] = useState("C");
   const [isRunning, setIsRunning] = useState(false);
   const [isAISidebarOpen, setIsAISidebarOpen] = useState(false);
-  
-  const [problem, setProblem] = useState({
-    title: "Two Sum",
-    difficulty: "Medium",
-    description: [
-      "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
-      "You may assume that each input would have exactly one solution, and you may not use the same element twice.",
-      "You can return the answer in any order."
-    ],
-    examples: [
-      { input: "[2,7,11,15], 9", output: "[0,1]", explanation: "Because nums[0] + nums[1] == 9, we return [0, 1]." },
-      { input: "[3,2,4], 6", output: "[1,2]" }
-    ],
-    constraints: [
-      "2 ≤ nums.length ≤ 10⁴",
-      "-10⁹ ≤ nums[i] ≤ 10⁹",
-      "-10⁹ ≤ target ≤ 10⁹",
-      "Only one valid answer exists"
-    ],
-    hints: [
-      { level: 1, text: "Consider using a hash map..." },
-      { level: 2, text: "Check if target - element exists in your map..." },
-      { level: 3, text: "Store both value and index..." }
-    ],
-    testCases: [
-      { id: 1, input: "[2,7,11,15], 9", expected: "[0,1]" },
-      { id: 2, input: "[3,2,4], 6", expected: "[1,2]" }
-    ]
-  });
+  const [problem, setProblem] = useState({});
 
   const languageTemplates = {
     JavaScript: `function twoSum(nums, target) {\n  // Write your solution here\n}`,
@@ -53,12 +29,36 @@ export default function CodingBattle() {
     Java: `class Solution {\n  public int[] twoSum(int[] nums, int target) {\n    // Write your solution here\n  }\n}`,
   };
 
+  // Timer Effect
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Fetch Problem from Backend
+  useEffect(() => {
+    function capitalize(str) {
+      if (!str) return '';
+      return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    }
+
+    const fetchProblem = async () => {
+      try {
+        const res = await fetch("/api/battle/allocate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ difficulty: capitalize(lobbyDetails.difficulty) }),
+        });
+        const data = await res.json();
+        setProblem(data.problem[0]);
+      } catch (error) {
+        console.error("Error fetching problem:", error);
+      }
+    };
+    fetchProblem();
+  }, [lobbyDetails.difficulty]);
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -232,7 +232,7 @@ export default function CodingBattle() {
             disabled={hints.length >= 3}
           >
             <span className="btn-icon">💡</span>
-            <span className="btn-text">Hint ({problem.hints.length}/3)</span>
+            <span className="btn-text">Hint ({hints.length}/3)</span>
           </button>
           <button 
             className="header-btn run-btn"
@@ -270,54 +270,38 @@ export default function CodingBattle() {
             {activeTab === "problem" ? (
               <div className="problem-view">
                 <div className="problem-header">
-                  <h2 className="problem-title">{problem.title}</h2>
-                  <span className={`difficulty-badge ${problem.difficulty.toLowerCase()}`}>
-                    {problem.difficulty}
-                  </span>
+                  <h2 className="problem-title">{problem.title || "Loading..."}</h2>
+                  {problem.difficulty && (
+                    <span className={`difficulty-badge ${problem.difficulty.toLowerCase()}`}>
+                      {problem.difficulty}
+                    </span>
+                  )}
                 </div>
 
-                <div className="problem-section">
-                  <h3 className="section-title">Description</h3>
-                  <div className="section-content">
-                    {problem.description.map((line, idx) => (
-                      <p key={idx} className="description-text">{line}</p>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="problem-section">
-                  <h3 className="section-title">Examples</h3>
-                  {problem.examples.map((ex, idx) => (
-                    <div key={idx} className="example-card">
-                      <div className="example-label">Example {idx + 1}</div>
-                      <div className="example-content">
-                        <div className="example-row">
-                          <span className="example-key">Input:</span>
-                          <code className="example-value">{ex.input}</code>
-                        </div>
-                        <div className="example-row">
-                          <span className="example-key">Output:</span>
-                          <code className="example-value">{ex.output}</code>
-                        </div>
-                        {ex.explanation && (
-                          <div className="example-explanation">
-                            <span className="example-key">Explanation:</span>
-                            <span className="example-value">{ex.explanation}</span>
-                          </div>
-                        )}
-                      </div>
+                {problem.description && (
+                  <div className="problem-section">
+                    <h3 className="section-title">Description</h3>
+                    <div className="section-content">
+                      <p className="description-text">{problem.description}</p>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )}
 
-                <div className="problem-section">
-                  <h3 className="section-title">Constraints</h3>
-                  <ul className="constraints-list">
-                    {problem.constraints.map((c, idx) => (
-                      <li key={idx} className="constraint-item">{c}</li>
-                    ))}
-                  </ul>
-                </div>
+                {problem.companies && (
+                  <div className="problem-section">
+                    <h3 className="section-title">Companies</h3>
+                    <div className="companies-tags">
+                      {(Array.isArray(problem.companies) 
+                        ? problem.companies 
+                        : [problem.companies]
+                      ).map((company, i) => (
+                        <span key={i} className="company-tag">
+                          {company}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {showHint && hints.length > 0 && (
                   <div className="problem-section">
@@ -354,7 +338,7 @@ export default function CodingBattle() {
                       <div className="player-info">
                         <div className="player-name">{player.name}</div>
                         <div className="player-stats">
-                          {player.testsPassed}/{problem.testCases.length} tests passed
+                          {player.testsPassed} tests passed
                         </div>
                       </div>
                       <div className="player-score">{player.score}</div>
@@ -408,6 +392,35 @@ export default function CodingBattle() {
             />
           </div>
 
+          {/* Resizer */}
+          <div
+            className="editor-resizer"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              const startY = e.clientY;
+              const editor = e.target.previousElementSibling;
+              const container = e.target.parentElement;
+              const startHeight = editor.getBoundingClientRect().height;
+
+              const onMouseMove = (eMove) => {
+                const newHeight = startHeight + (eMove.clientY - startY);
+                const containerHeight = container.getBoundingClientRect().height;
+                if (newHeight < 100 || newHeight > containerHeight - 100) return;
+                editor.style.flex = "none";
+                editor.style.height = `${newHeight}px`;
+              };
+
+              const onMouseUp = () => {
+                document.removeEventListener("mousemove", onMouseMove);
+                document.removeEventListener("mouseup", onMouseUp);
+              };
+
+              document.addEventListener("mousemove", onMouseMove);
+              document.addEventListener("mouseup", onMouseUp);
+            }}
+          />
+
+          {/* Test Results / Output */}
           {testResults.length > 0 && (
             <div className="output-section">
               <div className="output-header">

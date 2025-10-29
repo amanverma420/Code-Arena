@@ -7,7 +7,7 @@ import WaitingRoom from './component/waiting_room.jsx'
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import io from "socket.io-client";
 
-const socket = io.connect("http://10.1.231.115:3000");
+const socket = io.connect("http://10.1.234.56:3000");
 
 function App() {
   return (
@@ -16,7 +16,7 @@ function App() {
         <Route path="/" element={<LoginPage />} />
         <Route path="/lobby" element={<LobbyPage socket={socket} />} />
         <Route path="/waiting-room" element={<WaitingRoom socket={socket} />} />
-        <Route path="/battle" element={<CodingBattle />} />
+        <Route path="/battle" element={<CodingBattle socket={socket}/>} />
         <Route path="/leaderboard" element={<Final_leaderboard />} />
       </Routes>
     </BrowserRouter>

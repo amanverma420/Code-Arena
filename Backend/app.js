@@ -13,7 +13,7 @@ import { connectDB } from "./config/db.js";
 dotenv.config();
 
 const app = express()
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 const __dirname = path.resolve();
 
 app.use(express.json());
@@ -37,6 +37,7 @@ const io = new Server(server, {
 
 const lobbies = new Map();
 const socketMap = new Map();
+const leaderboards = new Map();
 
 io.on("connection", (socket) => {
   socket.on("joinRoom", ({ roomCode, player }) => {
@@ -88,6 +89,37 @@ io.on("connection", (socket) => {
 
   socket.on("startBattle", ({ roomCode }) => {
     io.to(roomCode).emit("startBattle");
+  });
+
+  socket.on("leaderboardRequest", ({ roomCode }) => {
+    if (!leaderboards.has(roomCode)) {
+      const players = lobbies.get(roomCode) || [];
+      const initialBoard = players.map(p => ({ name: p.name, score: 0 }));
+      leaderboards.set(roomCode, initialBoard);
+      io.to(roomCode).emit("updateLeaderboard", initialBoard);
+      return;
+    }
+    const board = leaderboards.get(roomCode);
+    io.to(roomCode).emit("updateLeaderboard", board);
+  });
+
+  socket.on("submitScore", ({ roomCode, player, score }) => {
+    if (!leaderboards.has(roomCode)) {
+      const players = lobbies.get(roomCode) || [];
+      const initialBoard = players.map(p => ({ name: p.name, score: 0 }));
+      leaderboards.set(roomCode, initialBoard);
+      io.to(roomCode).emit("updateLeaderboard", board);
+      return;
+    }
+    const board = leaderboards.get(roomCode);
+    const idx = board.findIndex(entry => entry.name === player);
+    if (idx !== -1) {
+      board[idx].score = score;
+    } else {
+      board.push({ name: player, score });
+    }
+    leaderboards.set(roomCode, board);
+    io.to(roomCode).emit("updateLeaderboard", board);
   });
 
   socket.on("disconnect", () => {

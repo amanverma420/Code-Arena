@@ -277,10 +277,10 @@ export default function WaitingRoom({socket}) {
 
     return () => {
      socket.off('updatePlayerList', handleUpdatePlayerList);
-     if (joinedRef.current) {
+     /*if (joinedRef.current) {
         socket.emit('leaveRoom', { roomCode: lobbyDetails.lobbyCode, player: playerName });
         joinedRef.current = false;
-     }
+     }*/
     };
     
   }, [socket,lobbyDetails.lobbyCode, playerName]);

@@ -67,49 +67,35 @@ export default function CodingBattle({socket}) {
   };
 
   const handleRun = useCallback(async () => {
-    if (isRunning) return;
-    setIsRunning(true);
-    setActiveTab("output");
-    setTestResults([
-      { id: 0, input: "", output: "Running...", expected: "", passed: false },
-    ]);
+  if (isRunning) return;
+  setIsRunning(true);
+  setActiveTab("output");
+  setTestResults([{ id: 0, output: "Running test cases..." }]);
 
-    const languageIds = {
-      C: 50,
-      JavaScript: 63,
-      Python: 71,
-      Java: 62,
-    };
+  const languageIds = { C: 50, JavaScript: 63, Python: 71, Java: 62 };
+  const apiKeys = [
+    import.meta.env.VITE_RAPIDAPI_KEY1,
+    import.meta.env.VITE_RAPIDAPI_KEY2,
+    import.meta.env.VITE_RAPIDAPI_KEY3,
+    import.meta.env.VITE_RAPIDAPI_KEY4,
+  ].filter(Boolean);
+  const apiHost = import.meta.env.VITE_RAPIDAPI_HOST;
 
-    const apiKeys = [
-      import.meta.env.VITE_RAPIDAPI_KEY1,
-      import.meta.env.VITE_RAPIDAPI_KEY2,
-      import.meta.env.VITE_RAPIDAPI_KEY3,
-      import.meta.env.VITE_RAPIDAPI_KEY4,
-    ].filter(Boolean);
+  const testcases = problem?.testcases || [];
+  const results = [];
 
-    const apiHost = import.meta.env.VITE_RAPIDAPI_HOST;
-
-    if (apiKeys.length === 0) {
-      setTestResults([
-        { id: 0, input: "", output: "❌ Missing API keys", expected: "", passed: false },
-      ]);
-      setIsRunning(false);
-      return;
-    }
-
+  for (let i = 0; i < testcases.length; i++) {
+    const { input, output: expected } = testcases[i];
     const payload = {
       source_code: code,
       language_id: languageIds[language],
-      stdin: "",
+      stdin: input,
     };
 
     let result = null;
-    let error = null;
-
     for (const key of apiKeys) {
       try {
-        const createRes = await fetch(
+        const res = await fetch(
           "https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true",
           {
             method: "POST",
@@ -121,47 +107,30 @@ export default function CodingBattle({socket}) {
             body: JSON.stringify(payload),
           }
         );
-
-        if (createRes.status === 429 || createRes.status === 403) {
-          console.warn(`⚠️ API key failed with ${createRes.status}, trying next key...`);
-          continue;
+        if (res.ok) {
+          result = await res.json();
+          break;
         }
-
-        if (!createRes.ok) {
-          const errText = await createRes.text();
-          throw new Error(`Bad Request: ${errText}`);
-        }
-
-        result = await createRes.json();
-        break;
       } catch (err) {
-        console.error(`❌ Error with key ${key}:`, err);
-        error = err;
-        continue;
+        console.error("Error with API key", key, err);
       }
     }
 
-    if (!result) {
-      setTestResults([
-        { id: 0, input: "", output: `❌ All API keys failed: ${error?.message || "Unknown error"}`, expected: "", passed: false },
-      ]);
-      setIsRunning(false);
-      return;
-    }
+    const output = result?.stdout?.trim() || result?.stderr || "No output";
+    const passed = output === expected.trim();
 
-    const output = result.stdout || result.stderr || result.compile_output || "No output";
-    setTestResults([
-      {
-        id: 1,
-        input: "N/A",
-        output,
-        expected: "N/A",
-        passed: result.status?.description === "Accepted",
-      },
-    ]);
-    setIsRunning(false);
-  }, [code, language, isRunning]);
+    results.push({
+      id: i + 1,
+      input,
+      output,
+      expected,
+      passed,
+    });
+  }
 
+  setTestResults(results);
+  setIsRunning(false);
+}, [code, language, isRunning, problem]);
   const handleGetHint = () => {
     if (hints.length >= 3) return;
     const newHint = {

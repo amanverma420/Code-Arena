@@ -1,46 +1,64 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function LoginPage() {
+export default function SignupPage() {
   const [formData, setFormData] = useState({
-    email: "",
+    username: "",
     password: "",
-    remember: false,
   });
   const [_focusedInput, setFocusedInput] = useState("");
   const [_isHovered, setIsHovered] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
+    setError("");
   };
 
   const handleSubmit = async () => {
-    const res = await fetch("http://localhost:3000/api/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ formData }),
-    });
-
-    const msg = await res.json();
-
-    if (msg.message === "Authenticated") {
-      navigate("/lobby", { state: { email: formData.email } });
-    } else {
-      alert("Login Failed");
+    if (!formData.username || !formData.password) {
+      setError("All fields are required");
+      return;
     }
 
-    console.log("Login data:", formData);
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:3000/api/login/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.username,
+          password: formData.password,
+        }),
+      });
+
+      const msg = await res.json();
+
+      if (res.ok) {
+        console.log("Account created successfully! Please login.");
+        navigate("/");
+      } else {
+        setError(msg.message || "Signup failed");
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+      console.error("Signup error:", err);
+    }
   };
 
   return (
-    <div className="login-container">
+    <div className="signup-container">
       <div className="sparkle"></div>
       <div className="sparkle"></div>
       <div className="sparkle"></div>
@@ -55,7 +73,7 @@ export default function LoginPage() {
             width: 100%;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* Hide scrollbars from animated elements */
+            overflow: hidden;
           }
 
           * {
@@ -66,7 +84,7 @@ export default function LoginPage() {
 
           /* --- Global Animations --- */
 
-          .login-container {
+          .signup-container {
             min-height: 100vh;
             width: 100vw;
             display: flex;
@@ -75,8 +93,7 @@ export default function LoginPage() {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             padding: 20px;
             position: relative;
-            overflow: hidden; /* Contain particles */
-            /* Animated Gradient Background */
+            overflow: hidden;
             background: linear-gradient(135deg, #667eea, #764ba2, #23a6d5, #23d5ab);
             background-size: 400% 400%;
             animation: gradientBG 15s ease infinite;
@@ -108,10 +125,9 @@ export default function LoginPage() {
             100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
           }
 
+          /* --- Signup Card & Content --- */
 
-          /* --- Login Card & Content --- */
-
-          .login-card {
+          .signup-card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(15px);
             border-radius: 24px;
@@ -120,10 +136,11 @@ export default function LoginPage() {
             max-width: 440px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            /* Fade-in Effect */
             animation: fadeIn 0.8s ease-out forwards;
             opacity: 0;
             transform: translateY(20px);
+            max-height: 95vh;
+            overflow-y: auto;
           }
 
           @keyframes fadeIn {
@@ -135,7 +152,7 @@ export default function LoginPage() {
 
           .logo-section {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 32px;
           }
 
           .logo-icon {
@@ -150,7 +167,6 @@ export default function LoginPage() {
             font-size: 32px;
             color: white;
             font-weight: bold;
-            /* Logo Animation */
             animation: neonPulse 2s infinite alternate, float 6s ease-in-out infinite;
             transition: transform 0.3s ease;
           }
@@ -170,7 +186,7 @@ export default function LoginPage() {
             100% { transform: translateY(0px); }
           }
           
-          .login-title {
+          .signup-title {
             font-size: 32px;
             font-weight: 700;
             color: #1a202c;
@@ -178,14 +194,14 @@ export default function LoginPage() {
             margin-top: 0;
           }
 
-          .login-subtitle {
+          .signup-subtitle {
             font-size: 16px;
             color: #718096;
             margin: 0;
           }
 
           .form-group {
-            margin-bottom: 24px;
+            margin-bottom: 20px;
           }
 
           .form-label {
@@ -206,34 +222,24 @@ export default function LoginPage() {
             transition: all 0.3s ease;
             font-family: inherit;
             background: #f7fafc;
-            color:black;
+            color: black;
+            
           }
 
           .form-input:focus {
             border-color: #667eea;
-            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
+            box-shadow: 0 0 0 4px rgba(254, 254, 255, 0.2);
             background: white;
           }
 
-          .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+          .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 12px 16px;
+            border-radius: 8px;
             font-size: 14px;
-            color: #4a5568;
             margin-bottom: 20px;
-          }
-
-          .checkbox-group input[type="checkbox"] {
-            cursor: pointer;
-            accent-color: #667eea;
-            width: 16px;
-            height: 16px;
-          }
-
-          .checkbox-group label {
-            cursor: pointer;
-            margin: 0;
+            border: 1px solid #fcc;
           }
 
           /* --- Button Animations --- */
@@ -245,7 +251,6 @@ export default function LoginPage() {
             z-index: 1;
           }
 
-          /* Shimmer Effect */
           .btn::before {
             content: '';
             position: absolute;
@@ -262,8 +267,7 @@ export default function LoginPage() {
             left: 150%;
           }
 
-          /* Ripple Effect */
-           .btn::after {
+          .btn::after {
             content: '';
             position: absolute;
             top: 50%;
@@ -287,7 +291,6 @@ export default function LoginPage() {
             animation: ripple 1s ease-out;
           }
 
-
           .btn-primary {
             width: 100%;
             padding: 16px;
@@ -310,7 +313,7 @@ export default function LoginPage() {
           .divider {
             display: flex;
             align-items: center;
-            margin: 32px 0;
+            margin: 24px 0;
             color: #a0aec0;
             font-size: 14px;
           }
@@ -364,7 +367,7 @@ export default function LoginPage() {
 
           .footer-text {
             text-align: center;
-            margin-top: 28px;
+            margin-top: 24px;
             font-size: 14px;
             color: #718096;
           }
@@ -394,11 +397,10 @@ export default function LoginPage() {
             transform: scaleX(1);
             transform-origin: bottom left;
           }
-          
 
           /* --- Responsive Design --- */
           @media (max-width: 480px) {
-            .login-card {
+            .signup-card {
               padding: 32px 20px;
               border-radius: 20px;
             }
@@ -408,7 +410,7 @@ export default function LoginPage() {
               height: 60px;
             }
 
-            .login-title {
+            .signup-title {
               font-size: 28px;
             }
 
@@ -419,25 +421,29 @@ export default function LoginPage() {
         `}
       </style>
 
-      <div className="login-card">
+      <div className="signup-card">
         <div className="logo-section">
           <div className="logo-icon">{"</>"}</div>
-          <h1 className="login-title">CodeArena</h1>
-          <p className="login-subtitle">Battle. Code. Conquer.</p>
+          <h1 className="signup-title">Join CodeArena</h1>
+          <p className="signup-subtitle">
+            Create your account and start coding
+          </p>
         </div>
 
         <div>
+          {error && <div className="error-message">{error}</div>}
+
           <div className="form-group">
-            <label className="form-label">Email Address</label>
+            <label className="form-label">Username</label>
             <input
-              type="email"
-              name="email"
-              value={formData.email}
+              type="text"
+              name="username"
+              value={formData.username}
               onChange={handleChange}
-              onFocus={() => setFocusedInput("email")}
+              onFocus={() => setFocusedInput("username")}
               onBlur={() => setFocusedInput("")}
               className="form-input"
-              placeholder="you@example.com"
+              placeholder="aman verma"
               required
             />
           </div>
@@ -457,30 +463,19 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="checkbox-group">
-            <input
-              type="checkbox"
-              name="remember"
-              checked={formData.remember}
-              onChange={handleChange}
-              id="remember"
-            />
-            <label htmlFor="remember">Remember me</label>
-          </div>
-
           <button
             onClick={handleSubmit}
             className="btn btn-primary"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
           >
-            Sign In
+            Create Account
           </button>
         </div>
 
         <div className="divider">
           <div className="divider-line"></div>
-          <span className="divider-text">or continue with</span>
+          <span className="divider-text">or sign up with</span>
           <div className="divider-line"></div>
         </div>
 
@@ -515,16 +510,9 @@ export default function LoginPage() {
         </div>
 
         <div className="footer-text">
-          Don't have an account?{" "}
-          <a
-            className="footer-link"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate("/signup");
-            }}
-            href="#"
-          >
-            Sign up
+          Already have an account?{" "}
+          <a className="footer-link" onClick={() => navigate("/")}>
+            Sign in
           </a>
         </div>
       </div>

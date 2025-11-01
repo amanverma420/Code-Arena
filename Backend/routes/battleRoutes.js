@@ -1,10 +1,10 @@
-import express from "express";
-import {  
-  allocateProblem,
-} from "../controllers/battleControllers.js";
+  import express from "express";
+  import {  
+    allocateProblem,
+  } from "../controllers/battleControllers.js";
 
-const router = express.Router();
+  const router = express.Router();
 
-router.post("/allocate", allocateProblem);
+  router.post("/allocate", allocateProblem);
 
-export default router;
+  export default router;

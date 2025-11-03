@@ -532,7 +532,7 @@ export default function LobbyPage({socket}) {
             </h2>
 
             {/* Mode Selector */}
-            <div style={styles.formGroup}>
+            {/* <div style={styles.formGroup}>
               <label style={styles.formLabel}>Mode</label>
               <div style={styles.modeSelector}>
                 {['competitive', 'collaborative', 'practice'].map((m) => (
@@ -555,7 +555,7 @@ export default function LobbyPage({socket}) {
                   </button>
                 ))}
               </div>
-            </div>
+            </div> */}
 
             {/* --- NEW TEAM SIZE SLIDER --- */}
             <div style={{...styles.formGroup, ...styles.sliderContainer}}>

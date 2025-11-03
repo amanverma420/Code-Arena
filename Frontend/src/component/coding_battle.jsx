@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, use } from "react";
 import Editor from "@monaco-editor/react";
 import { useLocation } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
@@ -13,7 +13,7 @@ export default function CodingBattle({socket}) {
   const [code, setCode] = useState(
     `function twoSum(nums, target) {\n  // Write your solution here\n  \n}`
   );
-  const [timeLeft, setTimeLeft] = useState(/*Number(lobbyDetails.battleTime) * 60 || 900*/10);
+  const [timeLeft, setTimeLeft] = useState(/*Number(lobbyDetails.battleTime) * 60 || 900*/100);
   const [testResults, setTestResults] = useState([]);
   const [hints, setHints] = useState([]);
   const [showHint, setShowHint] = useState(false);
@@ -45,7 +45,7 @@ export default function CodingBattle({socket}) {
     });
 
     navigate("/leaderboard", {
-      state: { lobby: lobbyDetails, player: playerName, leaderboard },
+      state: { lobby: lobbyDetails, player: playerName, leaderboard, testResults },
     });
   }, [timeLeft, socket, navigate, lobbyDetails, playerName, testResults]);
 
@@ -55,6 +55,13 @@ export default function CodingBattle({socket}) {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    socket.on("updateLeaderboard", (updatedLeaderboard) => {
+      setleaderboard(updatedLeaderboard);
+      console.log('Received updated leaderboard:', updatedLeaderboard);
+    });
+    }, [socket]);
 
   // Fetch Problem from Backend
   useEffect(() => {
@@ -86,70 +93,76 @@ export default function CodingBattle({socket}) {
   };
 
   const handleRun = useCallback(async () => {
-  if (isRunning) return;
-  setIsRunning(true);
-  setActiveTab("output");
-  setTestResults([{ id: 0, output: "Running test cases..." }]);
+    if (isRunning) return;
+    setIsRunning(true);
+    setActiveTab("output");
+    setTestResults([{ id: 0, output: "Running test cases..." }]);
 
-  const languageIds = { C: 50, JavaScript: 63, Python: 71, Java: 62 };
-  const apiKeys = [
-    import.meta.env.VITE_RAPIDAPI_KEY1,
-    import.meta.env.VITE_RAPIDAPI_KEY2,
-    import.meta.env.VITE_RAPIDAPI_KEY3,
-    import.meta.env.VITE_RAPIDAPI_KEY4,
-  ].filter(Boolean);
-  const apiHost = import.meta.env.VITE_RAPIDAPI_HOST;
+    const languageIds = { C: 50, JavaScript: 63, Python: 71, Java: 62 };
+    const apiKeys = [
+      import.meta.env.VITE_RAPIDAPI_KEY1,
+      import.meta.env.VITE_RAPIDAPI_KEY2,
+      import.meta.env.VITE_RAPIDAPI_KEY3,
+      import.meta.env.VITE_RAPIDAPI_KEY4,
+    ].filter(Boolean);
+    const apiHost = import.meta.env.VITE_RAPIDAPI_HOST;
 
-  const testcases = problem?.testcases || [];
-  const results = [];
+    const testcases = problem?.testcases || [];
+    const results = [];
 
-  for (let i = 0; i < testcases.length; i++) {
-    const { input, output: expected } = testcases[i];
-    const payload = {
-      source_code: code,
-      language_id: languageIds[language],
-      stdin: input,
-    };
+    for (let i = 0; i < testcases.length; i++) {
+      const { input, output: expected } = testcases[i];
+      const payload = {
+        source_code: code,
+        language_id: languageIds[language],
+        stdin: input,
+      };
 
-    let result = null;
-    for (const key of apiKeys) {
-      try {
-        const res = await fetch(
-          "https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-RapidAPI-Key": key,
-              "X-RapidAPI-Host": apiHost,
-            },
-            body: JSON.stringify(payload),
+      let result = null;
+      for (const key of apiKeys) {
+        try {
+          const res = await fetch(
+            "https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-RapidAPI-Key": key,
+                "X-RapidAPI-Host": apiHost,
+              },
+              body: JSON.stringify(payload),
+            }
+          );
+          if (res.ok) {
+            result = await res.json();
+            await new Promise(r => setTimeout(r, 1000));
+            break;
           }
-        );
-        if (res.ok) {
-          result = await res.json();
-          break;
+        } catch (err) {
+          console.error("Error with API key", key, err);
         }
-      } catch (err) {
-        console.error("Error with API key", key, err);
       }
+
+      const output = result?.stdout?.trim() || result?.stderr || "No output";
+      const passed = output === expected.trim();
+
+      results.push({
+        id: i + 1,
+        input,
+        output,
+        expected,
+        passed,
+      });
     }
 
-    const output = result?.stdout?.trim() || result?.stderr || "No output";
-    const passed = output === expected.trim();
-
-    results.push({
-      id: i + 1,
-      input,
-      output,
-      expected,
-      passed,
-    });
-  }
+  socket.emit('updatePlayerScore', { roomCode: lobbyDetails.lobbyCode, 
+                                    player: playerName, 
+                                    testsPassed: results.filter(p => p.passed === true).length, 
+                                    score: results.filter(p => p.passed === true).length * 25 });
 
   setTestResults(results);
   setIsRunning(false);
-}, [code, language, isRunning, problem]);
+}, [code, language, isRunning, problem, socket, lobbyDetails.lobbyCode, playerName.name]);
   const handleGetHint = () => {
     if (hints.length >= 3) return;
     const newHint = {
@@ -223,14 +236,14 @@ export default function CodingBattle({socket}) {
             <span className="btn-icon">✨</span>
             <span className="btn-text">AI Assistant</span>
           </button>
-          <button 
+          {/* <button 
             className="header-btn hint-btn"
             onClick={handleGetHint}
             disabled={hints.length >= 3}
           >
             <span className="btn-icon">💡</span>
             <span className="btn-text">Hint ({hints.length}/3)</span>
-          </button>
+          </button> */}
           <button 
             className="header-btn run-btn"
             onClick={handleRun}

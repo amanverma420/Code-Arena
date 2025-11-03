@@ -169,6 +169,12 @@ export default function SignupPage() {
             font-weight: bold;
             animation: neonPulse 2s infinite alternate, float 6s ease-in-out infinite;
             transition: transform 0.3s ease;
+            position: relative;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            z-index: 1;
+            /* Ensure text is visible */
+            -webkit-text-fill-color: white;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
           }
           
           .logo-icon:hover {
@@ -473,7 +479,7 @@ export default function SignupPage() {
           </button>
         </div>
 
-        <div className="divider">
+        {/* <div className="divider">
           <div className="divider-line"></div>
           <span className="divider-text">or sign up with</span>
           <div className="divider-line"></div>
@@ -507,7 +513,7 @@ export default function SignupPage() {
             </svg>
             GitHub
           </button>
-        </div>
+        </div> */}
 
         <div className="footer-text">
           Already have an account?{" "}

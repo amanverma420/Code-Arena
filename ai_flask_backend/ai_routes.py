@@ -2,6 +2,17 @@ from flask import Blueprint, request, jsonify
 from flask_cors import cross_origin
 import ollama
 
+import threading, ollama
+
+def preload_model():
+    try:
+        ollama.pull("deepseek-r1:8b")
+        ollama.chat(model="deepseek-r1:8b", messages=[{"role": "system", "content": "warming up"}])
+    except Exception as e:
+        print("Preload failed:", e)
+
+threading.Thread(target=preload_model, daemon=True).start()
+
 ai_bp = Blueprint('ai', __name__)
 
 MODEL_NAME = "deepseek-r1:8b"

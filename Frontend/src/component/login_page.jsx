@@ -150,9 +150,14 @@ export default function LoginPage() {
             font-size: 32px;
             color: white;
             font-weight: bold;
-            /* Logo Animation */
             animation: neonPulse 2s infinite alternate, float 6s ease-in-out infinite;
             transition: transform 0.3s ease;
+            position: relative;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            z-index: 1;
+            /* Ensure text is visible */
+            -webkit-text-fill-color: white;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
           }
           
           .logo-icon:hover {
@@ -403,10 +408,10 @@ export default function LoginPage() {
               border-radius: 20px;
             }
 
-            .logo-icon {
-              width: 60px;
-              height: 60px;
-            }
+            // .logo-icon {
+            //   width: 60px;
+            //   height: 60px;
+            // }
 
             .login-title {
               font-size: 28px;
@@ -457,7 +462,7 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="checkbox-group">
+          {/* <div className="checkbox-group">
             <input
               type="checkbox"
               name="remember"
@@ -466,7 +471,7 @@ export default function LoginPage() {
               id="remember"
             />
             <label htmlFor="remember">Remember me</label>
-          </div>
+          </div> */}
 
           <button
             onClick={handleSubmit}
@@ -478,7 +483,7 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <div className="divider">
+        {/* <div className="divider">
           <div className="divider-line"></div>
           <span className="divider-text">or continue with</span>
           <div className="divider-line"></div>
@@ -512,7 +517,7 @@ export default function LoginPage() {
             </svg>
             GitHub
           </button>
-        </div>
+        </div> */}
 
         <div className="footer-text">
           Don't have an account?{" "}

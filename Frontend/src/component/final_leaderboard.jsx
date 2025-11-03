@@ -1,26 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLocation } from 'react-router-dom';
 
 export default function FinalLeaderboard() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const leaderboard = location.state?.leaderboard || [];
   const [hoveredRow, setHoveredRow] = useState(null);
   const [particles, setParticles] = useState([]);
   const [showDetails, setShowDetails] = useState(false);
 
-  const teamAlpha = [
-    { name: "Player1", initials: "P1", score: 100, testsPassed: 10 },
-    { name: "Player2", initials: "P2", score: 85, testsPassed: 8 },
-    { name: "Player3", initials: "P3", score: 75, testsPassed: 7 },
-  ];
+  const [teamAlpha, setTeamAlpha] = useState([]);
+  const [teamBeta, setTeamBeta] = useState([]);
+  const [allPlayers, setAllPlayers] = useState([]);
 
-  const teamBeta = [
-    { name: "Player4", initials: "P4", score: 90, testsPassed: 9 },
-    { name: "Player5", initials: "P5", score: 70, testsPassed: 7 },
-  ];
+  useEffect(() => {
+    const alpha = leaderboard.filter(p => p.team === "A");
+    const beta = leaderboard.filter(p => p.team === "B");
+    setTeamAlpha(alpha);
+    setTeamBeta(beta);
 
-  const allPlayers = [...teamAlpha, ...teamBeta]
-    .map((p, idx) => ({ ...p, team: idx < 3 ? "Alpha" : "Beta" }))
-    .sort((a, b) => b.score - a.score);
+    const combined = [...alpha, ...beta].map((p, idx) => ({ ...p, team: idx < alpha.length ? "A" : "B" })).sort((a, b) => b.score - a.score);
+    setAllPlayers(combined);
+  }, [leaderboard]);
 
   const teamAlphaTotal = teamAlpha.reduce((sum, p) => sum + p.score, 0);
   const teamBetaTotal = teamBeta.reduce((sum, p) => sum + p.score, 0);
@@ -162,6 +164,7 @@ export default function FinalLeaderboard() {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: var(--font-sans);
           }
 
           .leaderboard-container {

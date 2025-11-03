@@ -537,9 +537,9 @@ export default function WaitingRoom({ socket }) {
                       <div className="player-name">
                         {player.name} {player.name === playerName && "(You)"}
                       </div>
-                      <div className="player-stats">
+                      {/* <div className="player-stats">
                         Rating: {player.rating}
-                      </div>
+                      </div> */}
                     </div>
                     <div
                       className={`status-badge ${
@@ -614,9 +614,9 @@ export default function WaitingRoom({ socket }) {
                       <div className="player-name">
                         {player.name} {player.name === playerName && "(You)"}
                       </div>
-                      <div className="player-stats">
+                      {/* <div className="player-stats">
                         Rating: {player.rating}
-                      </div>
+                      </div> */}
                     </div>
                     <div
                       className={`status-badge ${

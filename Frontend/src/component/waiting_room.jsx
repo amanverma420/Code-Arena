@@ -70,24 +70,36 @@ export default function WaitingRoom({ socket }) {
     socket.on("updatePlayerList", handleUpdatePlayerList);
 
     if (!joinedRef.current) {
-      socket.emit("joinRoom", {
-        roomCode: lobbyDetails.lobbyCode,
-        player: playerName,
-        lobbyDetails: lobbyDetails, // Pass lobby details to backend
-      });
       socket.emit("requestPlayerList", { roomCode: lobbyDetails.lobbyCode });
-      joinedRef.current = true;
+      socket.once("updatePlayerList", (players) => {
+    const names = Array.isArray(players) ? players : [];
+    const teamAPlayers = names.filter((p) => p.team === "A");
+    const teamBPlayers = names.filter((p) => p.team === "B");
+
+    const teamAFull = teamAPlayers.length >= requiredTeamSize;
+    const assignedTeam = teamAFull ? "B" : "A";
+
+    socket.emit("joinRoom", {
+      roomCode: lobbyDetails.lobbyCode,
+      player: playerName,
+      team: assignedTeam,
+      lobbyDetails: lobbyDetails, // still pass lobby details
+    });
+
+    joinedRef.current = true;
+  });
+      
     }
 
     return () => {
-      socket.off("updatePlayerList", handleUpdatePlayerList);
-      if (joinedRef.current) {
-        socket.emit("leaveRoom", {
-          roomCode: lobbyDetails.lobbyCode,
-          player: playerName,
-        });
-        joinedRef.current = false;
-      }
+      // socket.off("updatePlayerList", handleUpdatePlayerList);
+      // if (joinedRef.current) {
+      //   socket.emit("leaveRoom", {
+      //     roomCode: lobbyDetails.lobbyCode,
+      //     player: playerName,
+      //   });
+      //   joinedRef.current = false;
+      // }
     };
   }, [socket, lobbyDetails.lobbyCode, playerName, lobbyDetails]);
 

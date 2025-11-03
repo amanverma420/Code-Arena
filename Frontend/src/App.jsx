@@ -18,7 +18,7 @@ function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/lobby" element={<LobbyPage socket={socket} />} />
         <Route path="/waiting-room" element={<WaitingRoom socket={socket} />} />
-        <Route path="/battle" element={<CodingBattle />} />
+        <Route path="/battle" element={<CodingBattle socket={socket} />} />
         <Route path="/leaderboard" element={<Final_leaderboard />} />
       </Routes>
     </BrowserRouter>

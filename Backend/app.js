@@ -56,11 +56,12 @@ const io = new Server(server, {
 
 const lobbies = new Map(); 
 const socketMap = new Map(); 
+const leaderboards = new Map();
 
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
-  socket.on("joinRoom", ({ roomCode, player, lobbyDetails }) => {
+  socket.on("joinRoom", ({ roomCode, player, team, lobbyDetails }) => {
     console.log(`Player ${player} attempting to join room: ${roomCode}`);
 
     if (!lobbies.has(roomCode)) {
@@ -72,12 +73,20 @@ io.on("connection", (socket) => {
     }
     
     const lobby = lobbies.get(roomCode);
+    const requiredTeamSize = getTeamSize(lobbyDetails.teamSize);
+
+    const teamA = lobby.players.filter((p) => p.team === "A");
+    const teamB = lobby.players.filter((p) => p.team === "B");
+
+    if (!team || (team === "A" && teamA.length >= requiredTeamSize)) {
+    team = teamB.length < requiredTeamSize ? "B" : "A";
+  }
     
     if (!lobby.players.some(p => p.name === player)) {
       lobby.players.push({ 
         name: player, 
         ready: false, 
-        team: null,
+        team: team,
         rating: 1500,
         score: 0,
         testsPassed: 0
@@ -273,14 +282,6 @@ io.on("connection", (socket) => {
     console.log("Client disconnected:", socket.id);
   });
 });
-
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../frontend/dist")));
-
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
-  });
-}
 
 app.use((err, req, res, next) => {
   console.error("Server error:", err);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './ai_hint_sidebar.css';
 
-export default function AIHintSidebar({ isOpen, onClose, problemContext }) {
+export default function AIHintSidebar({ isOpen, onClose, problemContext, socket, lobbyDetails, leaderboard, setleaderboard, player }) {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -41,32 +41,38 @@ export default function AIHintSidebar({ isOpen, onClose, problemContext }) {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/ai-hint', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: "testuser",
-          message: inputValue,
-          problem_context: problemContext,
-          chat_history: messages
-        }),
+      // const response = await fetch('http://localhost:5000/api/ai-hint', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({
+      //     userId: "testuser",
+      //     message: inputValue,
+      //     problem_context: problemContext,
+      //     chat_history: messages
+      //   }),
+      // });
+
+      // if (!response.ok) {
+      //   throw new Error('Failed to get response from AI');
+      // }
+
+      // const data = await response.json();
+
+      // const assistantMessage = {
+      //   role: 'assistant',
+      //   content: data.response,
+      //   timestamp: new Date().toISOString()
+      // };
+
+      // setMessages(prev => [...prev, assistantMessage]);
+
+      socket.on("updateLeaderboard", (updatedLeaderboard) => {
+        setleaderboard(updatedLeaderboard);
+        console.log('Received updated leaderboard:', updatedLeaderboard);
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get response from AI');
-      }
-
-      const data = await response.json();
-
-      const assistantMessage = {
-        role: 'assistant',
-        content: data.response,
-        timestamp: new Date().toISOString()
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
+      socket.emit('updatePlayerScore', { roomCode: lobbyDetails.lobbyCode, player: player, testsPassed: 0, score: leaderboard.find(p => p.name === player).score - 15 });
     } catch (error) {
       console.error('Error:', error);
       const errorMessage = {

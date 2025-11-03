@@ -14,6 +14,10 @@ const lobbySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    battleTime: {
+      type: String,
+      required: true,
+    },
     difficulty: {
       type: String,
       required: true,

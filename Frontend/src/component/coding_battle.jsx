@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Editor from "@monaco-editor/react";
 import { useLocation } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
@@ -8,12 +8,12 @@ export default function CodingBattle({socket}) {
   const location = useLocation();
   const navigate = useNavigate();
   const lobbyDetails = location.state?.lobby || {};
-  
+  const playerName = location.state?.player || {};
   const [activeTab, setActiveTab] = useState("problem");
   const [code, setCode] = useState(
     `function twoSum(nums, target) {\n  // Write your solution here\n  \n}`
   );
-  const [timeLeft, setTimeLeft] = useState(2700);
+  const [timeLeft, setTimeLeft] = useState(/*Number(lobbyDetails.battleTime) * 60 || 900*/10);
   const [testResults, setTestResults] = useState([]);
   const [hints, setHints] = useState([]);
   const [showHint, setShowHint] = useState(false);
@@ -21,6 +21,8 @@ export default function CodingBattle({socket}) {
   const [isRunning, setIsRunning] = useState(false);
   const [isAISidebarOpen, setIsAISidebarOpen] = useState(false);
   const [problem, setProblem] = useState({});
+  const [leaderboard, setleaderboard] = useState([]);
+  const endedRef = useRef(false);
 
   const languageTemplates = {
     JavaScript: `function twoSum(nums, target) {\n  // Write your solution here\n}`,
@@ -29,7 +31,24 @@ export default function CodingBattle({socket}) {
     Java: `class Solution {\n  public int[] twoSum(int[] nums, int target) {\n    // Write your solution here\n  }\n}`,
   };
 
-  // Timer Effect
+  useEffect(() => {
+    if (timeLeft !== 0 || endedRef.current) return;
+    endedRef.current = true;
+
+    const testsPassed = (testResults || []).filter((t) => t.passed).length;
+
+    socket?.emit("submitScore", {
+      roomCode: lobbyDetails.lobbyCode,
+      player: playerName,
+      score: testsPassed,
+      testsPassed,
+    });
+
+    navigate("/leaderboard", {
+      state: { lobby: lobbyDetails, player: playerName, leaderboard },
+    });
+  }, [timeLeft, socket, navigate, lobbyDetails, playerName, testResults]);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
@@ -146,16 +165,6 @@ export default function CodingBattle({socket}) {
     setShowHint(true);
   };
 
-  // const leaderboard = [
-  //   { name: "You", team: "alpha", score: 85, testsPassed: 8 },
-  //   { name: "Player4", team: "beta", score: 90, testsPassed: 9 },
-  //   { name: "Player2", team: "alpha", score: 75, testsPassed: 7 },
-  //   { name: "Player5", team: "beta", score: 70, testsPassed: 7 },
-  //   { name: "Player3", team: "alpha", score: 60, testsPassed: 6 },
-  // ].sort((a, b) => b.score - a.score);
-
-  const [leaderboard, setleaderboard] = useState([]);
-
   useEffect(() => {
     const fetchLeaderboard = () => {
       if (!socket) return;
@@ -166,7 +175,7 @@ export default function CodingBattle({socket}) {
       socket.emit("leaderboardRequest", { roomCode: lobbyDetails.lobbyCode }); 
     };
     fetchLeaderboard();
-  }, [socket]);
+  }, []);
 
   return (
     <div className="coding-battle-container">
@@ -180,6 +189,11 @@ export default function CodingBattle({socket}) {
           language: language,
           currentCode: code
         }}
+        socket={socket}
+        lobbyDetails={lobbyDetails}
+        leaderboard={leaderboard}
+        setleaderboard={setleaderboard}
+        player={playerName}
       />
 
       {/* Header */}

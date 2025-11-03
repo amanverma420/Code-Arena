@@ -7,6 +7,7 @@ export async function lobbyCreate(req, res) {
       mode: req.body.mode,
       teamSize: req.body.teamSize, 
       difficulty: req.body.difficulty,
+      battleTime: req.body.battleTime,
     });
     await lobby.save();
     res.status(201).json({ message: "Lobby created successfully", lobby });

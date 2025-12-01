@@ -41,7 +41,7 @@ export default function AIHintSidebar({ isOpen, onClose, problemContext, socket,
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/ai-hint', {
+      const response = await fetch('https://unpropellent-elin-nonfastidious.ngrok-free.dev/api/ai-hint', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

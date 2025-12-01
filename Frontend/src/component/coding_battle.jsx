@@ -13,7 +13,7 @@ export default function CodingBattle({socket}) {
   const [code, setCode] = useState(
     `function twoSum(nums, target) {\n  // Write your solution here\n  \n}`
   );
-  const [timeLeft, setTimeLeft] = useState(/*Number(lobbyDetails.battleTime) * 60 || 900*/100);
+  const [timeLeft, setTimeLeft] = useState(/*Number(lobbyDetails.battleTime) * 60 || 900*/100000);
   const [testResults, setTestResults] = useState([]);
   const [hints, setHints] = useState([]);
   const [showHint, setShowHint] = useState(false);

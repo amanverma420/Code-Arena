@@ -13,7 +13,7 @@ import { connectDB } from "./config/db.js";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 const __dirname = path.resolve();
 
 const getTeamSize = (teamSizeStr) => {
@@ -28,7 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 if (process.env.NODE_ENV !== "production") {
   app.use(
     cors({
-      origin: "http://localhost:5173",
+      origin: "*",
       credentials: true
     })
   );
@@ -292,7 +292,7 @@ app.use((err, req, res, next) => {
 });
 
 connectDB().then(() => {
-  server.listen(PORT, () => {
+  server.listen(PORT,"0.0.0.0", () => {
     console.log(`✅ Server started on PORT: ${PORT}`);
     console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`✅ API available at: http://localhost:${PORT}/api`);

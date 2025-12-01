@@ -428,7 +428,7 @@ export default function LobbyPage({socket}) {
       battleTime, // --- ADDED BATTLE TIME ---
     };
 
-    const res = await fetch('http://localhost:3000/api/lobby/create', {
+    const res = await fetch('/api/lobby/create', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -442,7 +442,7 @@ export default function LobbyPage({socket}) {
   };
 
   const handleJoinRoom = async () => {
-    const res = await fetch('http://localhost:3000/api/lobby/join', {
+    const res = await fetch('/api/lobby/join', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

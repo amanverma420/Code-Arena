@@ -79,8 +79,8 @@ io.on("connection", (socket) => {
     const teamB = lobby.players.filter((p) => p.team === "B");
 
     if (!team || (team === "A" && teamA.length >= requiredTeamSize)) {
-    team = teamB.length < requiredTeamSize ? "B" : "A";
-  }
+      team = teamB.length < requiredTeamSize ? "B" : "A";
+    }
     
     if (!lobby.players.some(p => p.name === player)) {
       lobby.players.push({ 

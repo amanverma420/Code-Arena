@@ -11,7 +11,7 @@ export default function CodingBattle({socket}) {
   const playerName = location.state?.player || {};
   const [activeTab, setActiveTab] = useState("problem");
   const [code, setCode] = useState(
-    `function twoSum(nums, target) {\n  // Write your solution here\n  \n}`
+    `function Function(nums, target) {\n  // Write your solution here\n  \n}`
   );
   const [timeLeft, setTimeLeft] = useState(Number(lobbyDetails.battleTime) * 60 || 900);
   const [testResults, setTestResults] = useState([]);

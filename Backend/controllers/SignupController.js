@@ -2,14 +2,14 @@ import User from "../models/User.js";
 
 export async function signup(req, res) {
   try {
-    const { name, password } = req.body;
+    const { username, password } = req.body;
 
-    const existingUser = await User.findOne({ name });
+    const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(400).json({ message: "Username already exists" });
     }
     const newUser = new User({
-      name,
+      username,
       password  
     });
 
@@ -19,7 +19,7 @@ export async function signup(req, res) {
       message: "Account created successfully",
       user: {
         id: newUser._id,
-        name: newUser.name
+        name: newUser.username
       }
     });
 

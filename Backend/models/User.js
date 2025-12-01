@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 
 const userSchema = new mongoose.Schema({
-  name: {
+  username: {
     type: String,
     required: true,
     unique: true,
@@ -11,6 +11,10 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true
+  },
+  rating: {
+    type: Number,
+    default: 1500
   }
 }, {
   timestamps: true

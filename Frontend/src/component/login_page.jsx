@@ -30,8 +30,10 @@ export default function LoginPage() {
 
     const msg = await res.json();
 
+    console.log("Response from server:", msg);
+
     if (msg.message === "Authenticated") {
-      navigate("/lobby", { state: { email: formData.email } });
+      navigate("/lobby", { state: { user: msg.user[0] } });
     } else {
       alert("Login Failed");
     }

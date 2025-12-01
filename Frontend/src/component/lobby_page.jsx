@@ -397,7 +397,7 @@ export default function LobbyPage({socket}) {
   const [lobbyCode, setRoomCode] = useState('');
   const [createdRoom, setCreatedRoom] = useState(null);
   const [isHovered, setIsHovered] = useState(false);
-  const playerDetails = location.state || {};
+  const playerDetails = location.state?.user || {};
   const Navigate = useNavigate();
   const [particles, setParticles] = useState([]);
   const [hoveredButton, setHoveredButton] = useState(null);
@@ -437,8 +437,8 @@ export default function LobbyPage({socket}) {
     });
 
     setCreatedRoom(roomSettings);
-
-    Navigate('/waiting-room', { state: { lobby: roomSettings, player: playerDetails.email } });
+    localStorage.setItem('rating', playerDetails.rating || 1500);
+    Navigate('/waiting-room', { state: { lobby: roomSettings, player: playerDetails.username } });
   };
 
   const handleJoinRoom = async () => {
@@ -451,7 +451,7 @@ export default function LobbyPage({socket}) {
     });
     const data = await res.json();
     if (res.status === 200) {
-      Navigate('/waiting-room', { state: { lobby: data.lobby, player: playerDetails.email } });
+      Navigate('/waiting-room', { state: { lobby: data.lobby, player: playerDetails.username } });
     } else {
       // Replaced alert with console.error for better debugging
       console.error(data.message);
@@ -516,9 +516,9 @@ export default function LobbyPage({socket}) {
             CodeArena
           </div>
           <div style={styles.userInfo}>
-            <span>{playerDetails.email}</span>
+            <span>{playerDetails.username}</span>
             <div style={styles.avatar}>
-              {playerDetails.email ? playerDetails.email.substring(0, 2).toUpperCase() : '??'}
+              {playerDetails.username ? playerDetails.username.substring(0, 2).toUpperCase() : '??'}
             </div>
           </div>
         </div>
@@ -615,7 +615,7 @@ export default function LobbyPage({socket}) {
                 onChange={(e) => setBattleTime(e.target.value)}
                 style={styles.selectInput}
               >
-                <option value="15">15 Minutes</option>
+                <option value="2">15 Minutes</option>
                 <option value="30">30 Minutes</option>
                 <option value="45">45 Minutes</option>
                 <option value="60">60 Minutes</option>
@@ -695,19 +695,8 @@ export default function LobbyPage({socket}) {
                   onMouseEnter={() => setHoveredButton('stat1')}
                   onMouseLeave={() => setHoveredButton(null)}
                 >
-                  <div style={{ color: '#718096' }}>Total Battles</div>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#667eea' }}>42</div>
-                </div>
-                <div
-                  style={{
-                    ...styles.statItem,
-                    transform: hoveredButton === 'stat2' ? 'scale(1.1)' : 'scale(1)',
-                  }}
-                  onMouseEnter={() => setHoveredButton('stat2')}
-                  onMouseLeave={() => setHoveredButton(null)}
-                >
-                  <div style={{ color: '#718096' }}>Win Rate</div>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#48bb78' }}>68%</div>
+                  <div style={{ color: '#718096' }}>Rating</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#667eea' }}>{playerDetails.rating}</div>
                 </div>
               </div>
             </div>

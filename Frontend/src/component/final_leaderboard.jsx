@@ -6,10 +6,11 @@ export default function FinalLeaderboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const leaderboard = location.state?.leaderboard || [];
+  const playerName = location.state?.player || "Player";
   const [hoveredRow, setHoveredRow] = useState(null);
   const [particles, setParticles] = useState([]);
   const [showDetails, setShowDetails] = useState(false);
-
+  const [teamwinner, setWinner] = useState([]);
   const [teamAlpha, setTeamAlpha] = useState([]);
   const [teamBeta, setTeamBeta] = useState([]);
   const [allPlayers, setAllPlayers] = useState([]);
@@ -24,8 +25,34 @@ export default function FinalLeaderboard() {
     setAllPlayers(combined);
   }, [leaderboard]);
 
+  useEffect(() => {
+    setWinner(teamAlphaTotal > teamBetaTotal ? teamAlpha : teamBeta);
+    const updateRating = async(username, newRating) => {
+        try {
+          const response = await fetch('/api/login/updateRating', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, newRating })
+          });
+          const data = await response.json();
+          if (response.ok) {
+            console.log('Rating updated successfully:', data);
+          }
+        } catch (error) {
+          console.error('Error updating rating:', error);
+        }
+  };
+
+  if (teamwinner.find(p => p.name === playerName)) {
+    updateRating(playerName, 10);
+  } else {
+    updateRating(playerName, -10);
+  }
+  }, [teamAlpha, teamBeta]);
+
   const teamAlphaTotal = teamAlpha.reduce((sum, p) => sum + p.score, 0);
   const teamBetaTotal = teamBeta.reduce((sum, p) => sum + p.score, 0);
+  
   const winner = teamAlphaTotal > teamBetaTotal ? "Team Alpha" : "Team Beta";
 
   useEffect(() => {
@@ -61,8 +88,20 @@ export default function FinalLeaderboard() {
   };
 
   const handlePlayAgain = () => {
-    // Navigate to create/join lobby page
-    navigate('/lobby');
+    let obj = {};
+    if (teamwinner.find(p => p.name === playerName)) {
+      obj = {
+      username: playerName,
+      rating: Number(localStorage.getItem('rating')) + 10 || 1500
+      }
+      navigate('/lobby', { state: { user: obj } });
+  } else {
+    obj = {
+      username: playerName,
+      rating: Number(localStorage.getItem('rating')) - 10 || 1500
+      }
+      navigate('/lobby', { state: { user: obj } });
+  }
   };
 
   const handleViewDetails = () => {

@@ -38,7 +38,7 @@ export default function SignupPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: formData.username,
+          username: formData.username,
           password: formData.password,
         }),
       });
@@ -449,7 +449,7 @@ export default function SignupPage() {
               onFocus={() => setFocusedInput("username")}
               onBlur={() => setFocusedInput("")}
               className="form-input"
-              placeholder="aman verma"
+              placeholder="username"
               required
             />
           </div>

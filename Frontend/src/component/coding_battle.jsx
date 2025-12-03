@@ -25,10 +25,10 @@ export default function CodingBattle({socket}) {
   const endedRef = useRef(false);
 
   const languageTemplates = {
-    JavaScript: `function twoSum(nums, target) {\n  // Write your solution here\n}`,
-    Python: `def two_sum(nums, target):\n  # Write your solution here\n  pass`,
+    JavaScript: `function function(nums, target) {\n  // Write your solution here\n}`,
+    Python: `def function(nums, target):\n  # Write your solution here\n  pass`,
     C: `#include <stdio.h>\nint main() {\n  // Write your solution here\n  return 0;\n}`,
-    Java: `class Solution {\n  public int[] twoSum(int[] nums, int target) {\n    // Write your solution here\n  }\n}`,
+    Java: `class Solution {\n  public int[] function(int[] nums, int target) {\n    // Write your solution here\n  }\n}`,
   };
 
   useEffect(() => {
@@ -194,19 +194,21 @@ export default function CodingBattle({socket}) {
     <div className="coding-battle-container">
       {/* AI Sidebar */}
       <AIHintSidebar
-        isOpen={isAISidebarOpen}
-        onClose={() => setIsAISidebarOpen(false)}
-        problemContext={{
-          title: problem.title,
-          description: problem.description,
-          language: language,
-          currentCode: code
-        }}
-        socket={socket}
-        lobbyDetails={lobbyDetails}
-        leaderboard={leaderboard}
-        setleaderboard={setleaderboard}
-        player={playerName}
+          isOpen={isAISidebarOpen}
+          onClose={() => setIsAISidebarOpen(false)}
+          problemContext={{
+            title: problem.title,
+            description: problem.description,
+            language: language,
+            currentCode: code,
+            testcases: problem.testcases,      // ← NEW
+            testResults: testResults           // ← NEW
+          }}
+          socket={socket}
+          lobbyDetails={lobbyDetails}
+          leaderboard={leaderboard}
+          setleaderboard={setleaderboard}
+          player={playerName}
       />
 
       {/* Header */}

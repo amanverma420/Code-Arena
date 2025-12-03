@@ -615,7 +615,7 @@ export default function LobbyPage({socket}) {
                 onChange={(e) => setBattleTime(e.target.value)}
                 style={styles.selectInput}
               >
-                <option value="2">15 Minutes</option>
+                <option value="2">2 Minutes</option>
                 <option value="30">30 Minutes</option>
                 <option value="45">45 Minutes</option>
                 <option value="60">60 Minutes</option>

@@ -435,7 +435,7 @@ export default function LoginPage() {
 
         <div>
           <div className="form-group">
-            <label className="form-label">Email Address</label>
+            <label className="form-label">Username</label>
             <input
               type="email"
               name="email"

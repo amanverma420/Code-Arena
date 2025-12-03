@@ -1,4 +1,4 @@
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLocation } from 'react-router-dom';
 
@@ -10,10 +10,11 @@ export default function FinalLeaderboard() {
   const [hoveredRow, setHoveredRow] = useState(null);
   const [particles, setParticles] = useState([]);
   const [showDetails, setShowDetails] = useState(false);
-  const [teamwinner, setWinner] = useState([]);
+  //const [teamwinner, setWinner] = useState([]);
   const [teamAlpha, setTeamAlpha] = useState([]);
   const [teamBeta, setTeamBeta] = useState([]);
   const [allPlayers, setAllPlayers] = useState([]);
+  const ratedRef = useRef(false);
 
   useEffect(() => {
     const alpha = leaderboard.filter(p => p.team === "A");
@@ -25,8 +26,26 @@ export default function FinalLeaderboard() {
     setAllPlayers(combined);
   }, [leaderboard]);
 
+  const { teamAlphaTotal, teamBetaTotal, winner, teamwinner } = useMemo(() => {
+    const at = teamAlpha.reduce((sum, p) => sum + (p.score || 0), 0);
+    const bt = teamBeta.reduce((sum, p) => sum + (p.score || 0), 0);
+    const w = at > bt ? "Team Alpha" : "Team Beta";
+    const tw = at > bt ? teamAlpha : teamBeta;
+    return { teamAlphaTotal: at, teamBetaTotal: bt, winner: w, teamwinner: tw };
+  }, [teamAlpha, teamBeta]);
+
   useEffect(() => {
-    setWinner(teamAlphaTotal > teamBetaTotal ? teamAlpha : teamBeta);
+    //setWinner(teamAlphaTotal > teamBetaTotal ? teamAlpha : teamBeta);
+
+    if (ratedRef.current) return;
+
+    if (!teamwinner || teamwinner.length === 0) {
+      if (allPlayers.length === 0) return;
+      return;
+    }
+
+    ratedRef.current = true;
+
     const updateRating = async(username, newRating) => {
         try {
           const response = await fetch('/api/login/updateRating', { 
@@ -41,19 +60,19 @@ export default function FinalLeaderboard() {
         } catch (error) {
           console.error('Error updating rating:', error);
         }
-  };
+    };
 
-  if (teamwinner.find(p => p.name === playerName)) {
-    updateRating(playerName, 10);
-  } else {
-    updateRating(playerName, -10);
-  }
-  }, [teamAlpha, teamBeta]);
+    if (teamwinner.find(p => p.name === playerName)) {
+      updateRating(playerName, 10);
+    } else {
+      updateRating(playerName, -10);
+    }
+  }, [teamwinner]);
 
-  const teamAlphaTotal = teamAlpha.reduce((sum, p) => sum + p.score, 0);
-  const teamBetaTotal = teamBeta.reduce((sum, p) => sum + p.score, 0);
+  // const teamAlphaTotal = teamAlpha.reduce((sum, p) => sum + p.score, 0);
+  // const teamBetaTotal = teamBeta.reduce((sum, p) => sum + p.score, 0);
   
-  const winner = teamAlphaTotal > teamBetaTotal ? "Team Alpha" : "Team Beta";
+  // const winner = teamAlphaTotal > teamBetaTotal ? "Team Alpha" : "Team Beta";
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -98,7 +117,7 @@ export default function FinalLeaderboard() {
   } else {
     obj = {
       username: playerName,
-      rating: Number(localStorage.getItem('rating')) - 10 || 1500
+      rating: Number(Number(localStorage.getItem('rating')) - Number(10)) || 1500
       }
       navigate('/lobby', { state: { user: obj } });
   }

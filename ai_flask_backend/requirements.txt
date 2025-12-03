@@ -1,3 +1,8 @@
+
+#flask
+#flask-cors
+#ollama
+
 flask
 flask-cors
-ollama
+google-genai

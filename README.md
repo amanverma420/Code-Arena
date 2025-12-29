@@ -1,8 +1,1 @@
-env structure to run judge0
 
-VITE_RAPIDAPI_KEY1=0f335bc97amsh4e4c4592a1fe442p1dbd7bjsnd6b54ead811a
-VITE_RAPIDAPI_KEY2=53aea97563msh3650d3d4576121ep12e228jsnef9151908af4
-VITE_RAPIDAPI_KEY3=1df557d9d2msh22e8671c8c858a5p15c5e9jsn0aa80d40e24a
-VITE_RAPIDAPI_KEY4=1ddc5b15eamsh881c3cf3a7c2b78p121df0jsn8c3c1089c07a
-VITE_RAPIDAPI_HOST=judge0-ce.p.rapidapi.com
-locally create the file and run 

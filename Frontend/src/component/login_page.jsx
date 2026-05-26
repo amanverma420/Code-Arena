@@ -28,14 +28,21 @@ export default function LoginPage() {
       body: JSON.stringify({ formData }),
     });
 
-    const msg = await res.json();
+    let msg;
+    try {
+      msg = await res.json();
+    } catch (err) {
+      console.error("Failed to parse login response", err);
+      alert(`Login failed: server returned ${res.status}`);
+      return;
+    }
 
     console.log("Response from server:", msg);
 
-    if (msg.message === "Authenticated") {
+    if (res.ok && msg.message === "Authenticated") {
       navigate("/lobby", { state: { user: msg.user[0] } });
     } else {
-      alert("Login Failed");
+      alert(msg.message || "Login Failed");
     }
 
     console.log("Login data:", formData);

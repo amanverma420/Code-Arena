@@ -7,7 +7,7 @@ import http from "http";
 
 import loginRoutes from "./routes/loginRoutes.js";
 import lobbyRoutes from "./routes/lobbyRoutes.js";
-import battleRoutes from "./routes/battleRoutes.js"; // ADD THIS LINE
+import battleRoutes from "./routes/battleRoutes.js";
 import { connectDB } from "./config/db.js";
 
 dotenv.config();
@@ -291,13 +291,25 @@ app.use((err, req, res, next) => {
   });
 });
 
-connectDB().then(() => {
-  server.listen(PORT,"0.0.0.0", () => {
+const startServer = () => {
+  server.listen(PORT, "0.0.0.0", () => {
     console.log(`✅ Server started on PORT: ${PORT}`);
     console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`✅ API available at: http://localhost:${PORT}/api`);
   });
-}).catch((error) => {
-  console.error("❌ Failed to connect to database:", error);
+};
+
+const init = async () => {
+  const connected = await connectDB();
+  if (!connected) {
+    console.warn(
+      "Database is unavailable. The server is starting anyway, but API endpoints that require MongoDB will return 503."
+    );
+  }
+  startServer();
+};
+
+init().catch((error) => {
+  console.error("❌ Unexpected startup error:", error);
   process.exit(1);
 });

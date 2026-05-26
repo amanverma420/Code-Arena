@@ -1,6 +1,11 @@
 import Lobby from "../models/Lobby.js";
+import { dbConnected } from "../config/db.js";
 
 export async function lobbyCreate(req, res) {
+  if (!dbConnected) {
+    return res.status(503).json({ message: "Service unavailable: database not connected" });
+  }
+
   try {
     const lobby = new Lobby({
       lobbyCode: req.body.lobbyCode,
@@ -19,6 +24,10 @@ export async function lobbyCreate(req, res) {
 }
 
 export async function lobbyJoin(req, res) {
+  if (!dbConnected) {
+    return res.status(503).json({ message: "Service unavailable: database not connected" });
+  }
+
   try {
     const { lobbyCode } = req.body;
     const lobby = await Lobby.findOne({ lobbyCode: lobbyCode });

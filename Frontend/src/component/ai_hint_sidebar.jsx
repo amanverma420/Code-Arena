@@ -73,12 +73,30 @@ export default function AIHintSidebar({ isOpen, onClose, problemContext, socket,
 
       setMessages(prev => [...prev, assistantMessage]);
 
-      socket.emit('updatePlayerScore', { roomCode: lobbyDetails.lobbyCode, player: player, testsPassed: 0, score: leaderboard.find(p => p.name === player).score - 15 });
+      const playerEntry = leaderboard.find(p => p.name === player);
+      const currentScore = playerEntry ? (playerEntry.score || 0) : 0;
+      socket.emit('updatePlayerScore', { 
+        roomCode: lobbyDetails.lobbyCode, 
+        player: player, 
+        testsPassed: 0, 
+        score: Math.max(0, currentScore - 15) 
+      });
     } catch (error) {
       console.error('Error:', error);
+      
+      let fallbackText = "Connection error. Please ensure the backend server is running.";
+      const title = problemContext?.title || "";
+      if (title.includes("Add Two Numbers")) {
+        fallbackText = "💡 Hint: Read the two space-separated numbers from standard input, add them together, and print the result.";
+      } else if (title.includes("Reverse a String")) {
+        fallbackText = "💡 Hint: Read the string from stdin. You can split the characters, reverse them, and join them back to print.";
+      } else if (title.includes("Fibonacci")) {
+        fallbackText = "💡 Hint: Read N from stdin. Use a loop (or dynamic programming array) to compute F(N) up to N to print it.";
+      }
+
       const errorMessage = {
         role: 'assistant',
-        content: '❌ Connection error. Please ensure the backend server is running.',
+        content: `❌ ${fallbackText}`,
         timestamp: new Date().toISOString()
       };
       setMessages(prev => [...prev, errorMessage]);

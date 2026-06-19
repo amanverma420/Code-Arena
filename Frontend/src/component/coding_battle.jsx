@@ -162,7 +162,7 @@ export default function CodingBattle({socket}) {
 
   setTestResults(results);
   setIsRunning(false);
-}, [code, language, isRunning, problem, socket, lobbyDetails.lobbyCode, playerName.name]);
+}, [code, language, isRunning, problem, socket, lobbyDetails.lobbyCode, playerName]);
   const handleGetHint = () => {
     if (hints.length >= 3) return;
     const newHint = {

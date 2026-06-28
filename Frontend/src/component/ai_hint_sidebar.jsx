@@ -41,7 +41,8 @@ export default function AIHintSidebar({ isOpen, onClose, problemContext, socket,
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/ai-hint', {
+      const aiUrl = import.meta.env.PROD ? "/ai/api/ai-hint" : "http://localhost:5000/api/ai-hint";
+      const response = await fetch(aiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

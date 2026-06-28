@@ -8,7 +8,8 @@ import SignupPage from './component/Signup_page.jsx'
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import io from "socket.io-client";
 
-const socket = io.connect("http://localhost:3000");
+const socketUrl = import.meta.env.PROD ? window.location.origin : "http://localhost:3000";
+const socket = io.connect(socketUrl);
 
 function App() {
   return (

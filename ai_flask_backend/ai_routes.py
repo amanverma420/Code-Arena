@@ -8,7 +8,7 @@ from google.genai.errors import APIError # Import specific API error type
 
 # Use an environment variable for security
 # IMPORTANT: You must set the GEMINI_API_KEY environment variable when running your Flask app!
-API_KEY = "AIzaSyBBK5IkpH3iKcBxJx3ft7MpUQFslWRF1Fk"
+API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyBBK5IkpH3iKcBxJx3ft7MpUQFslWRF1Fk")
 
 ai_bp = Blueprint('ai', __name__)
 
